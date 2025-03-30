@@ -265,10 +265,8 @@
         // const proxyUrl = 'https://corsproxy.github.io/';
         // const cacheBuster = `nocache=${new Date().getTime()}-${Math.random()}`;
         // const targetUrl = `https://waterwebservices.rijkswaterstaat.nl/ONLINEWAARNEMINGENSERVICES_DBO/OphalenWaarnemingen?${cacheBuster}`;
-        const proxyUrl = '';
-        const targetUrl = 'https://corsproxy.io/' + encodeURIComponent(
-            'https://waterwebservices.rijkswaterstaat.nl/ONLINEWAARNEMINGENSERVICES_DBO/OphalenWaarnemingen'
-        );
+        const proxyUrl = 'https://thingproxy.freeboard.io/fetch/';
+        const targetUrl = 'https://waterwebservices.rijkswaterstaat.nl/ONLINEWAARNEMINGENSERVICES_DBO/OphalenWaarnemingen';
 
         console.log(`Starting Dutch data fetch for ${locationInfo.code}`);
 
@@ -530,7 +528,7 @@
                 {
                     name: 'Speyer',
                     km: 400,
-                    streckenAbschnitt: '384-410.50',
+                    streckenAbschnitt: '384-410.5',
                     giw: 237,
                     depthAtGiw: 210,
                     officialSafetyMargin: 30,
@@ -540,7 +538,7 @@
                 {
                     name: 'Mannheim',
                     km: 424,
-                    streckenAbschnitt: '410.50-431.50',
+                    streckenAbschnitt: '410.5-431.5',
                     giw: 155,
                     depthAtGiw: 210,
                     officialSafetyMargin: 30,
@@ -550,7 +548,7 @@
                 {
                     name: 'Worms',
                     km: 443,
-                    streckenAbschnitt: '431.50-462',
+                    streckenAbschnitt: '431.5-462',
                     giw: 68,
                     depthAtGiw: 210,
                     officialSafetyMargin: 30,
