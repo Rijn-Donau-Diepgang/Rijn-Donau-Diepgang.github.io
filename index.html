@@ -407,37 +407,10 @@ if (gaugeInfo.forecasts) {
                     correctionOp: 33,
                     correctionAf: 33
                 },
-                {
-                    name: 'Mainz',
-                    km: 498,
-                    streckenAbschnitt: '462-508',
-                    giw: 171,
-                    depthAtGiw: 210,
-                    officialSafetyMargin: 30,
-                    correctionOp: 11,
-                    correctionAf: 11
-                },
-                {
-                    name: 'Oestrich',
-                    km: 518,
-                    streckenAbschnitt: '508-540',
-                    giw: 92,
-                    depthAtGiw: 190,
-                    officialSafetyMargin: 30,
-                    correctionOp: 32,
-                    correctionAf: 32
-                },
-                {
-                    name: 'Bingen',
-                    km: 541,
-                    streckenAbschnitt: '540-541',
-                    giw: 0,
-                    depthAtGiw: 0,
-                    officialSafetyMargin: 0,
-                    correctionOp: 0,
-                    correctionAf: 0,
-                    customVuistregel: 100
-                },
+                { name: 'Mainz', km: 498, river: 'Rhine', streckenAbschnitt: '462-508', giw: 171, depthAtGiw: 210, officialSafetyMargin: 30, correctionOp: 11, correctionAf: 11 },
+                { name: 'Oestrich', km: 518, river: 'Rhine', streckenAbschnitt: '508-528', giw: 92, depthAtGiw: 190, officialSafetyMargin: 30, correctionOp: 42, correctionAf: 32 },
+                { name: 'Bingen', km: 528, river: 'Rhine', streckenAbschnitt: '528-540', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: 100 },
+
                 {
                     name: 'Kaub',
                     km: 546,
@@ -449,15 +422,27 @@ if (gaugeInfo.forecasts) {
                     correctionAf: 27
                 },
                 {
-                    name: 'Koblenz',
-                    km: 570,
-                    streckenAbschnitt: '566-601',
-                    giw: 77,
-                    depthAtGiw: 210,
-                    officialSafetyMargin: 30,
-                    correctionOp: 57,
-                    correctionAf: 57
-                },
+    name: 'Koblenz',
+    km: 591,
+    streckenAbschnitt: '566-592',
+    giw: 77,
+    depthAtGiw: 210,
+    officialSafetyMargin: 30,
+    correctionOp: 27,
+    correctionAf: 27
+},
+{
+    name: 'Koblenz (Mosel)',
+    apiDataName: 'Koblenz', // Use this to map to the API data
+    km: 592,
+    streckenAbschnitt: '592-601',
+    giw: 77,
+    depthAtGiw: 210,
+    officialSafetyMargin: 30,
+    correctionOp: 57,
+    correctionAf: 57
+},
+
                 {
                     name: 'Andernach',
                     km: 613,
@@ -518,16 +503,6 @@ if (gaugeInfo.forecasts) {
                     correctionOp: 0,
                     correctionAf: 0
                 },
-                 { // Added Rees based on API response
-                    name: 'Rees',
-                    km: 837, // Approximate KM, adjust if needed
-                    streckenAbschnitt: '837-857', // Assuming same section as Emmerich
-                    giw: 74, // Using Emmerich's GIW as placeholder
-                    depthAtGiw: 280, // Using Emmerich's depth as placeholder
-                    officialSafetyMargin: 30,
-                    correctionOp: 0,
-                    correctionAf: 0
-                },
                 {
                     name: 'Emmerich',
                     km: 852,
@@ -541,47 +516,18 @@ if (gaugeInfo.forecasts) {
                  { // Added Lobith based on API response
                     name: 'Lobith',
                     km: 862, // Approximate KM, adjust if needed
-                    streckenAbschnitt: '857-893', // Assuming same section as Nijmegen
-                    giw: 0,
-                    depthAtGiw: 0,
-                    officialSafetyMargin: 0,
-                    correctionOp: 0,
-                    correctionAf: 0,
-                    customVuistregel: -465 // Using Nijmegen's rule as placeholder
-                },
-                 { // Added Pannerdense kop based on API response
-                    name: 'Pannerdense kop',
-                    km: 867, // Approximate KM, adjust if needed
-                    streckenAbschnitt: '857-893', // Assuming same section as Nijmegen
-                    giw: 0,
-                    depthAtGiw: 0,
-                    officialSafetyMargin: 0,
-                    correctionOp: 0,
-                    correctionAf: 0,
-                    customVuistregel: -435 // Using Nijmegen's rule as placeholder
-                },
-                {
-                    name: 'Nijmegen',
-                    km: 884,
                     streckenAbschnitt: '857-893',
                     giw: 0,
                     depthAtGiw: 0,
                     officialSafetyMargin: 0,
                     correctionOp: 0,
                     correctionAf: 0,
-                    customVuistregel: -275
+                    customVuistregel: -465
                 },
-                {
-                    name: 'Tiel',
-                    km: 914,
-                    streckenAbschnitt: '893-930',
-                    giw: 0,
-                    depthAtGiw: 0,
-                    officialSafetyMargin: 0,
-                    correctionOp: 0,
-                    correctionAf: 0,
-                    customVuistregel: 10
-                }
+
+                { name: 'Nijmegen', km: 883, river: 'Waal', streckenAbschnitt: '867.5-893', correctionOp: 0, correctionAf: 0, customVuistregel: -275 },
+                { name: 'Tiel', km: 914, river: 'Waal', streckenAbschnitt: '893-930', correctionOp: 0, correctionAf: 0, customVuistregel: 10 }
+
                 // --- End of gauge definitions ---
             ].sort((a, b) => a.km - b.km); // Ensure gauges are sorted by KM
 
@@ -706,37 +652,38 @@ if (gaugeInfo.forecasts) {
         }, [loadWaterLevelData]); // Depend on the memoized load function
 
         // Calculate draft for a given gauge and water level
-        const calculateDraft = (gaugeName, waterLevel, direction = travelDirection) => {
-            if (gaugeName === "Konstanz") return "N/A"; // Specific exclusion
+const calculateDraft = (gaugeName, waterLevel, direction = travelDirection) => {
+    if (gaugeName === "Konstanz") return "N/A"; // Specific exclusion
 
-            const gauge = gaugeData.find(g => g.name === gaugeName);
-            // Ensure gauge exists, waterLevel is a valid number
-            if (!gauge || waterLevel === null || waterLevel === undefined || isNaN(Number(waterLevel))) {
-                 return null; // Return null if data is missing or invalid
-            }
+    const gauge = gaugeData.find(g => g.name === gaugeName);
+    // Ensure gauge exists, waterLevel is a valid number
+    if (!gauge || waterLevel === null || waterLevel === undefined || isNaN(Number(waterLevel))) {
+         return null; // Return null if data is missing or invalid
+    }
 
-            const numericWaterLevel = Number(waterLevel);
-            const customCorrection = customCorrections[direction]?.[gaugeName] || 0;
+    const numericWaterLevel = Number(waterLevel);
+    // Use gauge name for custom corrections to be consistent
+    const customCorrection = customCorrections[direction]?.[gauge.name] || 0;
 
-            // Use customVuistregel if defined and not null/undefined
-            if (gauge.customVuistregel !== undefined && gauge.customVuistregel !== null) {
-                return (numericWaterLevel + gauge.customVuistregel + customCorrection).toFixed(0);
-            }
-            // Otherwise, use GIW calculation if GIW is valid
-            else if (gauge.giw !== null && gauge.giw !== undefined && gauge.depthAtGiw !== null && gauge.depthAtGiw !== undefined) {
-                 // Ensure GIW related values are numbers before calculation
-                 const giw = Number(gauge.giw);
-                 const depth = Number(gauge.depthAtGiw);
-                 const safety = Number(gauge.officialSafetyMargin);
-                 if (!isNaN(giw) && !isNaN(depth) && !isNaN(safety)) {
-                    return (numericWaterLevel - giw + depth - safety + customCorrection).toFixed(0);
-                 } else {
-                     return null; // Cannot calculate if GIW data is invalid
-                 }
-            }
-            // Fallback if neither method applies
-            return null;
-        };
+    // Use customVuistregel if defined and not null/undefined
+    if (gauge.customVuistregel !== undefined && gauge.customVuistregel !== null) {
+        return (numericWaterLevel + gauge.customVuistregel + customCorrection).toFixed(0);
+    }
+    // Otherwise, use GIW calculation if GIW is valid
+    else if (gauge.giw !== null && gauge.giw !== undefined && gauge.depthAtGiw !== null && gauge.depthAtGiw !== undefined) {
+         // Ensure GIW related values are numbers before calculation
+         const giw = Number(gauge.giw);
+         const depth = Number(gauge.depthAtGiw);
+         const safety = Number(gauge.officialSafetyMargin);
+         if (!isNaN(giw) && !isNaN(depth) && !isNaN(safety)) {
+            return (numericWaterLevel - giw + depth - safety + customCorrection).toFixed(0);
+         } else {
+             return null; // Cannot calculate if GIW data is invalid
+         }
+    }
+    // Fallback if neither method applies
+    return null;
+};
 
 
         // Calculate official rule of thumb
@@ -838,30 +785,32 @@ if (gaugeInfo.forecasts) {
 
 
         // Find the critical gauge (minimum draft) for the current journey
-        const findCriticalGauge = useCallback(() => {
-            if (!dataLoaded || Object.keys(waterLevels).length === 0) return null;
+const findCriticalGauge = useCallback(() => {
+    if (!dataLoaded || Object.keys(waterLevels).length === 0) return null;
 
-            let criticalGaugeName = null;
-            let minDraft = Infinity;
+    let criticalGaugeName = null;
+    let minDraft = Infinity;
 
-            gaugeData.forEach(gauge => {
-                // Only include gauges in the journey with valid current measurements
-                if (isInJourney(gauge.km) &&
-                    waterLevels[gauge.name] !== null && waterLevels[gauge.name] !== undefined &&
-                    currentTimes[gauge.name] && currentTimes[gauge.name] !== 'N/A' && currentTimes[gauge.name] !== 'Invalid Time' && currentTimes[gauge.name] !== 'Parse Error')
-                {
-                    const draft = parseFloat(calculateDraft(gauge.name, waterLevels[gauge.name], travelDirection));
-                    if (!isNaN(draft) && draft < minDraft) {
-                        minDraft = draft;
-                        criticalGaugeName = gauge.name;
-                    }
-                }
-            });
+    gaugeData.forEach(gauge => {
+        const dataSourceName = gauge.apiDataName || gauge.name;
 
-            return criticalGaugeName;
-        }, [dataLoaded, waterLevels, currentTimes, gaugeData, isInJourney, travelDirection, calculateDraft, customCorrections]);
+        if (isInJourney(gauge.km) &&
+            waterLevels[dataSourceName] !== null && waterLevels[dataSourceName] !== undefined &&
+            currentTimes[dataSourceName] && currentTimes[dataSourceName] !== 'N/A' &&
+            currentTimes[dataSourceName] !== 'Invalid Time' && currentTimes[dataSourceName] !== 'Parse Error')
+        {
+            // Pass the gauge object itself rather than just the name
+            // This ensures we use the correct gauge configuration
+            const draft = parseFloat(calculateDraft(dataSourceName, waterLevels[dataSourceName], travelDirection));
+            if (!isNaN(draft) && draft < minDraft) {
+                minDraft = draft;
+                criticalGaugeName = dataSourceName;
+            }
+        }
+    });
 
-
+    return criticalGaugeName;
+}, [dataLoaded, waterLevels, currentTimes, gaugeData, isInJourney, travelDirection, calculateDraft, customCorrections]);
         const handleJourneyChange = (type, value) => {
             const newJourney = {
                 ...journey,
@@ -1033,9 +982,10 @@ if (gaugeInfo.forecasts) {
                             </thead>
                             <tbody>
                             {/* Filter and map gauge data */}
-                            {gaugeData.filter(gauge => isInJourney(gauge.km)).map(gauge => {
+                           {gaugeData.filter(gauge => isInJourney(gauge.km)).map(gauge => {
+                                const dataSourceName = gauge.apiDataName || gauge.name;
                                 const isCritical = gauge.name === criticalGaugeName;
-                                const currentDraft = calculateDraft(gauge.name, waterLevels[gauge.name], travelDirection);
+                                const currentDraft = calculateDraft(dataSourceName, waterLevels[dataSourceName], travelDirection);
 
                                 return (
                                     <tr key={gauge.name} className={isCritical ? 'critical-row' : ''}>
@@ -1045,8 +995,8 @@ if (gaugeInfo.forecasts) {
                                             <a
                                                 href={
                                                     ["Nijmegen", "Tiel", "Lobith", "Pannerdense kop"].includes(gauge.name)
-                                                    ? `https://waterinfo.rws.nl/publiek/waterhoogte/${gauge.name.replace(/ /g, '%20')}/details` // Basic RWS link guess
-                                                    : `https://www.elwis.de/DE/dynamisch/Wasserstaende/Pegelvorhersage:${gauge.name.toUpperCase().replace(/ /g, '_')}` // ELWIS link
+                                                        ? `https://waterinfo.rws.nl/publiek/waterhoogte/${gauge.name.replace(/ /g, '%20')}/details` // Basic RWS link guess
+                                                        : `https://www.elwis.de/DE/dynamisch/Wasserstaende/Pegelvorhersage:${gauge.name.toUpperCase().replace(/ /g, '_')}` // ELWIS link
                                                 }
                                                 target="_blank"
                                                 rel="noopener noreferrer"
@@ -1063,13 +1013,18 @@ if (gaugeInfo.forecasts) {
                                         </td>
                                         {/* Current Water Level */}
                                         <td style={{textAlign: 'right'}}>
-                                            {waterLevels[gauge.name] ?? '-'}
-                                            <div style={{fontSize: '0.8em', color: '#aaa', fontWeight: 'normal', marginTop: '4px'}}>
-                                                {currentTimes[gauge.name] || 'N/A'}
+                                            {waterLevels[gauge.apiDataName || gauge.name] ?? '-'}
+                                            <div style={{
+                                                fontSize: '0.8em',
+                                                color: '#aaa',
+                                                fontWeight: 'normal',
+                                                marginTop: '4px'
+                                            }}>
+                                                {currentTimes[gauge.apiDataName || gauge.name] || 'N/A'}
                                             </div>
                                         </td>
                                         {/* Current Trend */}
-                                        <td style={{textAlign: 'right'}}>{waterTrends[gauge.name] ?? '-'}</td>
+                                        <td style={{textAlign: 'right'}}>{waterTrends[gauge.apiDataName || gauge.name] ?? '-'}</td>
                                         {/* GIW */}
                                         <td style={{textAlign: 'right'}}>{calculateOfficialRuleOfThumb(gauge) !== "N/A" ? gauge.giw : 'N/A'}</td>
                                         {/* TuGIW */}
@@ -1106,8 +1061,8 @@ if (gaugeInfo.forecasts) {
 
                                         {/* Forecast columns */}
                                         {forecastDates.map(date => {
-                                            const timesObject = forecasts[date]?.[gauge.name];
-                                            const referenceTime = currentTimes[gauge.name];
+                                           const timesObject = forecasts[date]?.[gauge.apiDataName || gauge.name];
+const referenceTime = currentTimes[gauge.apiDataName || gauge.name];
                                             const selectedTime = timesObject ? getBestForecastTime(timesObject, referenceTime) : '';
                                             const forecastValue = timesObject && selectedTime ? timesObject[selectedTime] : undefined;
                                             const forecastDraft = forecastValue !== undefined ? calculateDraft(gauge.name, forecastValue, travelDirection) : null;
@@ -1128,10 +1083,11 @@ if (gaugeInfo.forecasts) {
                                     </tr>
                                 );
                             })}
-                             {/* Show message if no gauges are in the selected journey */}
-                             {gaugeData.filter(gauge => isInJourney(gauge.km)).length === 0 && (
+                            {/* Show message if no gauges are in the selected journey */}
+                            {gaugeData.filter(gauge => isInJourney(gauge.km)).length === 0 && (
                                 <tr>
-                                    <td colSpan={11 + forecastDates.length + 2} style={{textAlign: 'center', fontStyle: 'italic', color: '#aaa'}}>
+                                    <td colSpan={11 + forecastDates.length + 2}
+                                        style={{textAlign: 'center', fontStyle: 'italic', color: '#aaa'}}>
                                         Geen peilingen geselecteerd voor deze reis. Pas begin/eind aan.
                                     </td>
                                 </tr>
