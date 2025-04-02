@@ -122,6 +122,10 @@
             border-radius: 4px;
             font-size: 0.875rem;
         }
+        .data-status.pending { background-color: #444; }
+        .data-status.success { background-color: #006400; }
+        .data-status.error { background-color: #8B0000; }
+
 
         .refresh-btn {
             background-color: #0066cc;
@@ -166,274 +170,129 @@
         return null;
     }
 
-
-    // Format time display
-    function formatTimeDisplay(dateString) {
+    // Format time display (simplified as API provides HH:MM directly now)
+    function formatTimeDisplay(timeString) {
+        // Assumes timeString is already in HH:MM format or similar simple format
+        // If it's a full date string, attempt to format
         try {
-            const date = new Date(dateString);
+            if (timeString && timeString.includes(':') && timeString.length <= 5) {
+                return timeString; // Already formatted
+            }
+            const date = new Date(timeString);
             if (isNaN(date.getTime())) {
-                console.error("Invalid date string:", dateString);
-                return "N/A";
+                // Handle the specific "YYYY-MM-DD HH:MM" format from the API's currentTime
+                 if (typeof timeString === 'string' && timeString.includes(' ')) {
+                     const parts = timeString.split(' ');
+                     if (parts.length === 2 && parts[1].includes(':')) {
+                         return parts[1]; // Return the HH:MM part
+                     }
+                 }
+                return timeString || "N/A"; // Return original or N/A if invalid
             }
             return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
         } catch (error) {
-            console.error("Error formatting date:", error);
+            console.error("Error formatting time:", error, "Input:", timeString);
             return "N/A";
         }
     }
 
-    // Fetch German water level data using official API
-    async function fetchWaterLevelData(gaugeName) {
-        const stationCode = gaugeName.toUpperCase().replace(/ /g, '_');
-        const now = new Date();
-        const startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
-        let formattedForecasts = {};
-
+    // Fetch data from the custom API
+    async function fetchDataFromCustomAPI() {
+        const apiUrl = 'https://rdd-backend.vercel.app/api/data';
+        console.log(`Fetching data from custom API: ${apiUrl}`);
         try {
-            // Fetch measurements from last 24 hours
-            const measurementsResponse = await fetch(
-                `https://pegelonline.wsv.de/webservices/rest-api/v2/stations/${stationCode}/W/measurements.json?start=${startDate.toISOString()}`
-            );
-            if (!measurementsResponse.ok) throw new Error('Failed to fetch measurements');
-            const measurements = await measurementsResponse.json();
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+            }
+            const apiData = await response.json();
+            console.log("Received data from custom API:", apiData);
 
-            // Process measurements
-            let currentLevel = null;
-            let currentTrend = null;
-            let currentTime = null;
+            const processedData = {
+                waterLevels: {},
+                waterTrends: {},
+                currentTimes: {},
+                forecasts: {},
+                lastUpdated: new Date(), // Default to fetch time
+                apiForecastDates: new Set() // Store dates available in API response
+            };
+            let latestSourceUpdateTime = 0; // Track the latest update time from the source
 
-            if (measurements.length > 0) {
-                const sortedMeasurements = measurements.sort((a, b) =>
-                    new Date(a.timestamp) - new Date(b.timestamp)
-                );
+            const todayStr = new Date().toISOString().split('T')[0]; // Get today's date string
 
-                const first = sortedMeasurements[0];
-                const last = sortedMeasurements[sortedMeasurements.length - 1];
+            for (const gaugeName in apiData) {
+                if (apiData.hasOwnProperty(gaugeName)) {
+                    const gaugeInfo = apiData[gaugeName];
 
-                currentLevel = Math.round(last.value);
-                currentTrend = Math.round(last.value - first.value);
-                currentTime = formatTimeDisplay(last.timestamp);
+                    // Basic data
+                    processedData.waterLevels[gaugeName] = gaugeInfo.currentLevel ?? null;
+                    processedData.waterTrends[gaugeName] = gaugeInfo.currentTrend ?? null;
+                    processedData.currentTimes[gaugeName] = formatTimeDisplay(gaugeInfo.currentTime); // Use formatter
+
+                    // Process forecasts, filtering out today's date
+                    // Process forecasts, filtering out today's date
+if (gaugeInfo.forecasts) {
+    for (const dateStr in gaugeInfo.forecasts) {
+        // --- IMPORTANT: Filter out today's forecasts ---
+        if (dateStr > todayStr) {
+            processedData.apiForecastDates.add(dateStr); // Add valid future date
+
+            if (!processedData.forecasts[dateStr]) {
+                processedData.forecasts[dateStr] = {};
+            }
+            if (!processedData.forecasts[dateStr][gaugeName]) {
+                processedData.forecasts[dateStr][gaugeName] = {};
             }
 
-            // Fetch forecasts - handle separately so measurement data is still returned if forecasts fail
-            try {
-                const forecastResponse = await fetch(
-                    `https://pegelonline.wsv.de/webservices/rest-api/v2/stations/${stationCode}/WV/measurements.json`
-                );
+            // Extract only the 'value' for each time slot
+            for (const timeStr in gaugeInfo.forecasts[dateStr]) {
+                // Ensure timeStr is HH:MM format and value exists
+                if (timeStr.match(/^\d{2}:\d{2}$/) && gaugeInfo.forecasts[dateStr][timeStr]?.value !== undefined && gaugeInfo.forecasts[dateStr][timeStr]?.value !== null) {
+                    processedData.forecasts[dateStr][gaugeName][timeStr] = gaugeInfo.forecasts[dateStr][timeStr].value;
+                }
+            }
+            // Clean up gauge entry if no valid times were added
+            if (Object.keys(processedData.forecasts[dateStr][gaugeName]).length === 0) {
+                delete processedData.forecasts[dateStr][gaugeName];
+            }
 
-                if (forecastResponse.ok) {
-                    const forecastsData = await forecastResponse.json();
+            // Clean up date entry if no valid gauges were added
+            if (Object.keys(processedData.forecasts[dateStr]).length === 0) {
+                delete processedData.forecasts[dateStr];
+            }
+        }
+    }
+}
 
-                    // Process forecasts if data exists
-                    if (forecastsData && Array.isArray(forecastsData)) {
-                        forecastsData.forEach(entry => {
-                            if (entry.type === 'forecast' || entry.type === 'estimate') {
-                                const date = new Date(entry.timestamp);
-                                const dateStr = date.toISOString().split('T')[0];
-                                const timeStr = formatTimeDisplay(entry.timestamp);
-
-                                if (!formattedForecasts[dateStr]) {
-                                    formattedForecasts[dateStr] = {};
-                                }
-                                formattedForecasts[dateStr][timeStr] = Math.round(entry.value);
+                    // Track the latest 'lastUpdated' time from the API response sources
+                    if (gaugeInfo.lastUpdated) {
+                        try {
+                            const updateTime = new Date(gaugeInfo.lastUpdated).getTime();
+                            if (!isNaN(updateTime) && updateTime > latestSourceUpdateTime) {
+                                latestSourceUpdateTime = updateTime;
                             }
-                        });
-                    }
-                } else {
-                    console.warn(`No forecast available for ${gaugeName}`);
-                }
-            } catch (forecastError) {
-                console.warn(`Error fetching forecasts for ${gaugeName}, continuing with measurements only:`, forecastError);
-            }
-
-            return {
-                currentLevel,
-                currentTime,
-                currentTrend,
-                timestamp: now.toISOString(),
-                forecasts: formattedForecasts
-            };
-
-        } catch (error) {
-            console.error(`Error fetching German data for ${gaugeName}:`, error);
-            throw error;
-        }
-    }
-
-    // Fetch Dutch water level data
-    async function fetchDutchWaterLevelData(locationInfo) {
-        // const proxyUrl = 'https://corsproxy.github.io/';
-        // const cacheBuster = `nocache=${new Date().getTime()}-${Math.random()}`;
-        // const targetUrl = `https://waterwebservices.rijkswaterstaat.nl/ONLINEWAARNEMINGENSERVICES_DBO/OphalenWaarnemingen?${cacheBuster}`;
-        const proxyUrl = 'https://thingproxy.freeboard.io/fetch/';
-        const targetUrl = 'https://waterwebservices.rijkswaterstaat.nl/ONLINEWAARNEMINGENSERVICES_DBO/OphalenWaarnemingen';
-
-        console.log(`Starting Dutch data fetch for ${locationInfo.code}`);
-
-        try {
-            // Create date strings for the last 24 hours
-            const now = new Date();
-            const dayAgo = new Date(now);
-            dayAgo.setHours(now.getHours() - 24);
-
-            const formatDate = (date) => {
-                const localISOString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
-                    .toISOString()
-                    .replace('Z', '');
-
-                const offset = -date.getTimezoneOffset();
-                const offsetHours = Math.floor(Math.abs(offset) / 60).toString().padStart(2, '0');
-                const offsetMinutes = (Math.abs(offset) % 60).toString().padStart(2, '0');
-                const offsetSign = offset >= 0 ? '+' : '-';
-
-                return `${localISOString}${offsetSign}${offsetHours}:${offsetMinutes}`;
-            };
-
-            const startDate = formatDate(dayAgo);
-            const endDate = formatDate(now);
-
-            console.log(`Fetching Dutch data for ${locationInfo.code} at ${now.toISOString()}`);
-
-            // Create measurement payload
-            const measurementPayload = {
-                "Locatie": {
-                    "Code": locationInfo.code,
-                    "X": locationInfo.x,
-                    "Y": locationInfo.y
-                },
-                "AquoPlusWaarnemingMetadata": {
-                    "AquoMetadata": {
-                        "Compartiment": {"Code": "OW"},
-                        "Grootheid": {"Code": "WATHTE"}
-                    }
-                },
-                "Periode": {
-                    "Begindatumtijd": startDate,
-                    "Einddatumtijd": endDate
-                }
-            };
-
-            // Fetch measurements
-            const measurementResponse = await fetch(proxyUrl + targetUrl, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(measurementPayload)
-            });
-
-            if (!measurementResponse.ok) {
-                throw new Error(`Failed to fetch water level data: ${measurementResponse.status}`);
-            }
-
-            const measurementData = await measurementResponse.json();
-
-            // Process measurement data
-            let currentLevel = null;
-            let currentTrend = null;
-            let currentTime = null;
-            let rawTimestamp = null;
-
-            if (measurementData?.WaarnemingenLijst?.[0]?.MetingenLijst?.length > 1) {
-                const measurements = [...measurementData.WaarnemingenLijst[0].MetingenLijst];
-                measurements.sort((a, b) => new Date(a.Tijdstip) - new Date(b.Tijdstip));
-
-                const firstMeasurement = measurements[0];
-                const lastMeasurement = measurements[measurements.length - 1];
-
-                if (lastMeasurement?.Meetwaarde) {
-                    currentLevel = Math.round(lastMeasurement.Meetwaarde.Waarde_Numeriek);
-                    rawTimestamp = lastMeasurement.Tijdstip;
-                    currentTime = formatTimeDisplay(lastMeasurement.Tijdstip);
-                }
-
-                if (firstMeasurement?.Meetwaarde && lastMeasurement?.Meetwaarde) {
-                    currentTrend = Math.round(lastMeasurement.Meetwaarde.Waarde_Numeriek -
-                        firstMeasurement.Meetwaarde.Waarde_Numeriek);
-                }
-            }
-
-            // Fetch forecast data
-            const forecast24h = new Date(now);
-            forecast24h.setHours(now.getHours() + 24);
-
-            const forecast50h = new Date(now);
-            forecast50h.setHours(now.getHours() + 50);
-
-            const forecastStartDate = formatDate(forecast24h);
-            const forecastEndDate = formatDate(forecast50h);
-
-            const forecastPayload = {
-                "Locatie": {
-                    "Code": locationInfo.code,
-                    "X": locationInfo.x,
-                    "Y": locationInfo.y
-                },
-                "AquoPlusWaarnemingMetadata": {
-                    "AquoMetadata": {
-                        "Compartiment": {"Code": "OW"},
-                        "Grootheid": {"Code": "WATHTEVERWACHT"}
-                    }
-                },
-                "Periode": {
-                    "Begindatumtijd": forecastStartDate,
-                    "Einddatumtijd": forecastEndDate
-                }
-            };
-
-            console.log(`Fetching forecast data for location: ${locationInfo.code}...`);
-
-            const forecastResponse = await fetch(proxyUrl + targetUrl, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(forecastPayload)
-            });
-
-            if (!forecastResponse.ok) {
-                throw new Error(`Failed to fetch forecast data: ${forecastResponse.status}`);
-            }
-
-            const forecastData = await forecastResponse.json();
-
-            let formattedForecasts = {};
-
-            if (forecastData?.WaarnemingenLijst?.[0]?.MetingenLijst?.length) {
-                const forecasts = [...forecastData.WaarnemingenLijst[0].MetingenLijst];
-                forecasts.sort((a, b) => new Date(a.Tijdstip) - new Date(b.Tijdstip));
-
-                forecasts.forEach(forecast => {
-                    if (forecast?.Tijdstip && forecast?.Meetwaarde) {
-                        const forecastTime = new Date(forecast.Tijdstip);
-                        const forecastDate = forecastTime.toISOString().split('T')[0];
-                        const forecastTimeStr = formatTimeDisplay(forecast.Tijdstip);
-                        const forecastValue = Math.round(forecast.Meetwaarde.Waarde_Numeriek);
-
-                        if (!formattedForecasts[forecastDate]) {
-                            formattedForecasts[forecastDate] = {};
+                        } catch (e) {
+                            console.warn(`Could not parse lastUpdated timestamp "${gaugeInfo.lastUpdated}" for ${gaugeName}`);
                         }
-
-                        formattedForecasts[forecastDate][forecastTimeStr] = forecastValue;
                     }
-                });
+                }
             }
 
-            console.log(`Successfully fetched Dutch data for ${locationInfo.code}`);
+            // Set the overall lastUpdated time based on the latest source update time if available
+            if (latestSourceUpdateTime > 0) {
+                processedData.lastUpdated = new Date(latestSourceUpdateTime);
+            }
 
-            return {
-                currentLevel,
-                currentTime,
-                currentTrend,
-                timestamp: new Date().toISOString(),
-                forecasts: formattedForecasts,
-                debug: {
-                    rawTimestamp: rawTimestamp,
-                    requestTime: now.toISOString()
-                }
-            };
+            console.log("Processed data:", processedData);
+            return processedData;
 
         } catch (error) {
-            console.error(`Error fetching data for location ${locationInfo.code}:`, error);
-            throw error;
+            console.error('Error fetching or processing data from custom API:', error);
+            throw error; // Re-throw to be caught by the caller
         }
     }
+
 
     // Rhine Draft Calculator Component
     function RhineDraftCalculator() {
@@ -442,9 +301,9 @@
         const [waterTrends, setWaterTrends] = useState({});
         const [forecasts, setForecasts] = useState({});
         const [customCorrections, setCustomCorrections] = useState({upstream: {}, downstream: {}})
-        const [forecastDates, setForecastDates] = useState([]);
+        const [forecastDates, setForecastDates] = useState([]); // Dates to display in columns
         const [dataLoaded, setDataLoaded] = useState(false);
-        const [dataStatus, setDataStatus] = useState({status: 'pending', message: 'Initializing data...'});
+        const [dataStatus, setDataStatus] = useState({status: 'pending', message: 'Initializing...'});
         const [lastUpdated, setLastUpdated] = useState(new Date());
         const [travelDirection, setTravelDirection] = useState('downstream');
         const [currentTimes, setCurrentTimes] = useState({});
@@ -452,47 +311,40 @@
         const [nextRefreshTime, setNextRefreshTime] = useState(null);
         const refreshButtonRef = useRef(null);
         const [journey, setJourney] = useState(() => {
-            // Try to load saved journey from cookies
             const savedJourney = getCookie('rhineDraftJourney');
-            // Return saved journey if available, otherwise use default (Tiel to Maxau)
-            return savedJourney || {start: 914, end: 0};
+            return savedJourney || {start: 914, end: 362}; // Default Tiel -> Maxau
         });
 
         // Auto-refresh effect
         useEffect(() => {
             if (!autoRefresh) {
                 setNextRefreshTime(null);
-                return () => {
-                };
+                return () => {};
             }
+            const setupRefresh = () => {
+                const nextTime = new Date();
+                nextTime.setMinutes(nextTime.getMinutes() + 10);
+                setNextRefreshTime(nextTime);
 
-            // Set initial next refresh time
-            const nextTime = new Date();
-            nextTime.setMinutes(nextTime.getMinutes() + 10);
-            setNextRefreshTime(nextTime);
+                const intervalId = setInterval(() => {
+                    console.log("Auto-refresh triggered at", new Date().toLocaleTimeString());
+                    if (refreshButtonRef.current) {
+                        refreshButtonRef.current.click();
+                    }
+                    // Note: nextRefreshTime will be updated inside handleRefresh -> loadWaterLevelData
+                }, 10 * 60 * 1000); // 10 minutes
 
-            // Create the interval
-            const intervalId = setInterval(() => {
-                console.log("Auto-refresh triggered at", new Date().toLocaleTimeString());
+                return () => clearInterval(intervalId);
+            };
+            const clearRefresh = setupRefresh();
+            return clearRefresh; // Cleanup on unmount or when autoRefresh changes
+        }, [autoRefresh]); // Rerun only when autoRefresh changes
 
-                // Simulate clicking the refresh button
-                if (refreshButtonRef.current) {
-                    refreshButtonRef.current.click();
-                }
 
-                // Update next refresh time
-                const refreshTime = new Date();
-                refreshTime.setMinutes(refreshTime.getMinutes() + 10);
-                setNextRefreshTime(refreshTime);
-            }, 10 * 60 * 1000); // 10 minutes in milliseconds
-
-            // Return cleanup function
-            return () => clearInterval(intervalId);
-        }, [autoRefresh]);
-
-        // Initialize gauge data
+        // Initialize gauge data and load initial water levels
         useEffect(() => {
             const gauges = [
+                 // --- Keep your existing gauge definitions here ---
                 {
                     name: 'Konstanz',
                     km: 0,
@@ -666,6 +518,16 @@
                     correctionOp: 0,
                     correctionAf: 0
                 },
+                 { // Added Rees based on API response
+                    name: 'Rees',
+                    km: 837, // Approximate KM, adjust if needed
+                    streckenAbschnitt: '837-857', // Assuming same section as Emmerich
+                    giw: 74, // Using Emmerich's GIW as placeholder
+                    depthAtGiw: 280, // Using Emmerich's depth as placeholder
+                    officialSafetyMargin: 30,
+                    correctionOp: 0,
+                    correctionAf: 0
+                },
                 {
                     name: 'Emmerich',
                     km: 852,
@@ -675,6 +537,28 @@
                     officialSafetyMargin: 30,
                     correctionOp: 0,
                     correctionAf: 0
+                },
+                 { // Added Lobith based on API response
+                    name: 'Lobith',
+                    km: 862, // Approximate KM, adjust if needed
+                    streckenAbschnitt: '857-893', // Assuming same section as Nijmegen
+                    giw: 0,
+                    depthAtGiw: 0,
+                    officialSafetyMargin: 0,
+                    correctionOp: 0,
+                    correctionAf: 0,
+                    customVuistregel: -275 // Using Nijmegen's rule as placeholder
+                },
+                 { // Added Pannerdense kop based on API response
+                    name: 'Pannerdense kop',
+                    km: 867, // Approximate KM, adjust if needed
+                    streckenAbschnitt: '857-893', // Assuming same section as Nijmegen
+                    giw: 0,
+                    depthAtGiw: 0,
+                    officialSafetyMargin: 0,
+                    correctionOp: 0,
+                    correctionAf: 0,
+                    customVuistregel: -275 // Using Nijmegen's rule as placeholder
                 },
                 {
                     name: 'Nijmegen',
@@ -698,7 +582,8 @@
                     correctionAf: 0,
                     customVuistregel: 10
                 }
-            ];
+                // --- End of gauge definitions ---
+            ].sort((a, b) => a.km - b.km); // Ensure gauges are sorted by KM
 
             const defaultCorrections = {upstream: {}, downstream: {}};
             gauges.forEach(gauge => {
@@ -706,260 +591,202 @@
                 defaultCorrections.downstream[gauge.name] = gauge.correctionAf;
             });
 
-            // Try to load saved corrections from cookies
             const savedCorrections = getCookie('rhineDraftCorrections');
-
-            // Set gauge data
             setGaugeData(gauges);
-
-            // Use saved corrections if available, otherwise use defaults
             setCustomCorrections(savedCorrections || defaultCorrections);
 
-            loadWaterLevelData(gauges);
-        }, []);
+            loadWaterLevelData(); // Load data on initial mount
+        }, []); // Empty dependency array ensures this runs only once on mount
 
         const handleCorrectionChange = (direction, gaugeName, value) => {
             const newCorrections = {
                 ...customCorrections,
                 [direction]: {
                     ...customCorrections[direction],
-                    [gaugeName]: parseInt(value, 10)
+                    [gaugeName]: parseInt(value, 10) || 0 // Ensure it's a number, default to 0
                 }
             };
-
             setCustomCorrections(newCorrections);
-
-            // Save to cookie whenever corrections change
             setCookie('rhineDraftCorrections', newCorrections);
         };
 
-        // Load water level data
-        const loadWaterLevelData = async (gauges) => {
-            setDataStatus({status: 'pending', message: 'Voorbereiding data verversing...'});
-
-            // Initialize data structures
-            const newWaterLevels = {...waterLevels};
-            const newWaterTrends = {...waterTrends};
-            const newForecasts = {...forecasts};
-            const newCurrentTimes = {...currentTimes};
-            const allDates = new Set();
-
-            // Dutch gauge location information
-            const dutchGaugeInfo = {
-                'Nijmegen': {code: 'NIJM', x: 696323.704868814, y: 5748468.59068443},
-                'Tiel': {code: 'TIEW', x: 668937.952337159, y: 5752825.4886739}
-            };
-
+        // Load water level data from the custom API
+        const loadWaterLevelData = useCallback(async () => {
+            setDataStatus({ status: 'pending', message: 'Data ophalen van RDD API...' });
+            setDataLoaded(false); // Set loading state
             try {
-                for (const gauge of gauges) {
-                    // Update status to show which gauge is being downloaded
-                    setDataStatus({
-                        status: 'pending',
-                        message: `Data van ${gauge.name} downloaden...`
-                    });
+                const processedData = await fetchDataFromCustomAPI();
 
-                    try {
-                        let data;
+                // Update state with the processed data
+                setWaterLevels(processedData.waterLevels);
+                setWaterTrends(processedData.waterTrends);
+                setCurrentTimes(processedData.currentTimes);
+                setForecasts(processedData.forecasts);
+                setLastUpdated(processedData.lastUpdated);
 
-                        // Check if this is a Dutch gauge
-                        if (dutchGaugeInfo[gauge.name]) {
-                            // Fetch Dutch gauge data
-                            data = await fetchDutchWaterLevelData(dutchGaugeInfo[gauge.name]);
-                        } else {
-                            // Fetch German gauge data with existing function
-                            data = await fetchWaterLevelData(gauge.name);
-                        }
+                // Determine forecast dates to display (e.g., next 4 days available in API)
+                // Use the dates actually found in the API response, limited to 4
+                const availableDates = Array.from(processedData.apiForecastDates).sort();
+                setForecastDates(availableDates.slice(0, 4)); // Show max 4 future days with data
 
-                        // Update individual gauge data as soon as it's available
-                        newWaterLevels[gauge.name] = data.currentLevel || 0;
-                        newWaterTrends[gauge.name] = data.currentTrend || 0;
-                        newCurrentTimes[gauge.name] = data.currentTime || 'N/A';
+                setDataStatus({ status: 'success', message: `Data bijgewerkt: ${processedData.lastUpdated.toLocaleString()}` });
+                setDataLoaded(true);
 
-                        // Update state immediately for this gauge
-                        setWaterLevels({...newWaterLevels});
-                        setWaterTrends({...newWaterTrends});
-                        setCurrentTimes({...newCurrentTimes});
-
-                        // Process forecast data
-                        Object.entries(data.forecasts).forEach(([date, times]) => {
-                            if (!newForecasts[date]) newForecasts[date] = {};
-                            newForecasts[date][gauge.name] = times;
-                            allDates.add(date);
-                        });
-
-                        // Update forecasts after each gauge
-                        setForecasts({...newForecasts});
-
-                        // Recalculate and update forecast dates after each gauge
-                        const sortedDates = Array.from(allDates).sort();
-                        const filteredDates = getLogicalForecastDates(sortedDates);
-                        setForecastDates(filteredDates);
-
-                    } catch (error) {
-                        console.error(`Error fetching ${gauge.name}:`, error);
-                        newWaterLevels[gauge.name] = 0;
-                        newWaterTrends[gauge.name] = 0;
-                        newCurrentTimes[gauge.name] = 'N/A';
-
-                        // Still update state to show empty values
-                        setWaterLevels({...newWaterLevels});
-                        setWaterTrends({...newWaterTrends});
-                        setCurrentTimes({...newCurrentTimes});
-                    }
+                 // Update next refresh time display if auto-refresh is on
+                if (autoRefresh) {
+                    const nextTime = new Date();
+                    nextTime.setMinutes(nextTime.getMinutes() + 10);
+                    setNextRefreshTime(nextTime);
                 }
 
-                // Final update
-                setDataStatus({status: 'success', message: `Data bijgewerkt: ${new Date().toLocaleString()}`});
-                setLastUpdated(new Date());
-                setDataLoaded(true);
+
             } catch (error) {
-                setDataStatus({status: 'error', message: error.message});
+                setDataStatus({ status: 'error', message: `Fout bij ophalen data: ${error.message}` });
+                // Clear data on error? Or keep stale data? Keeping stale for now.
+                // setWaterLevels({}); setWaterTrends({}); setCurrentTimes({}); setForecasts({}); setForecastDates([]);
+                setDataLoaded(false); // Indicate data load failed or incomplete
             }
-        };
+        }, [autoRefresh]); // Include autoRefresh dependency for updating nextRefreshTime
 
-        // Function to get forecast time at 24h intervals from the last measurement
-        function getBestForecastTime(times, referenceTime = null) {
-            if (!times || !times.length) return '';
 
-            // Sort times
-            const sortedTimes = [...times].sort();
+        // Function to get the best forecast time (closest to current time, preferring same hour)
+        function getBestForecastTime(timesObject, referenceTime = null) {
+             if (!timesObject || typeof timesObject !== 'object' || Object.keys(timesObject).length === 0) {
+                return ''; // No times available
+            }
+            const times = Object.keys(timesObject); // Get the HH:MM keys
 
-            // If no reference time provided or it's invalid, return the latest time
+            // Sort times chronologically
+            const sortedTimes = [...times].sort((a, b) => {
+                const [aH, aM] = a.split(':').map(Number);
+                const [bH, bM] = b.split(':').map(Number);
+                return (aH * 60 + aM) - (bH * 60 + bM);
+            });
+
+            // If no reference time, return the earliest available forecast time for that day
             if (!referenceTime || !referenceTime.includes(':')) {
-                return sortedTimes[sortedTimes.length - 1];
-            }
-
-            // Get latest available time
-            const latestTime = sortedTimes[sortedTimes.length - 1];
-
-            // Parse latest available time to check if it's a morning-only forecast day
-            const [latestHours] = latestTime.split(':').map(part => parseInt(part, 10));
-
-            // If the latest forecast is at or before 8:00, it's likely the last forecast day
-            // with only morning forecasts available - so return the latest available time
-            if (latestHours <= 8) {
-                return latestTime;
+                return sortedTimes[0];
             }
 
             // Parse the reference time
             const [refHours, refMinutes] = referenceTime.split(':').map(part => parseInt(part, 10));
-            const refTotalMinutes = (refHours * 60) + (refMinutes || 0);
 
-            // First try to find an exact hour match
-            const exactMatches = sortedTimes.filter(time => {
+            // 1. Try to find an exact hour match
+            const exactHourMatches = sortedTimes.filter(time => {
                 const [timeHours] = time.split(':').map(part => parseInt(part, 10));
                 return timeHours === refHours;
             });
-
-            if (exactMatches.length > 0) {
-                return exactMatches[0];
+            if (exactHourMatches.length > 0) {
+                // If multiple matches for the hour, return the earliest one (e.g., 08:00 if ref is 08:30)
+                return exactHourMatches[0];
             }
 
-            // Special case for early morning hours (before 7:00)
-            if (refHours < 7) {
-                // Look for late evening forecasts (20:00-23:59) as alternatives
-                const lateForecasts = sortedTimes.filter(time => {
-                    const [timeHours] = time.split(':').map(part => parseInt(part, 10));
-                    return timeHours >= 20;
-                });
-
-                if (lateForecasts.length > 0) {
-                    return lateForecasts[lateForecasts.length - 1];
-                }
-            }
-
-            // For all other cases, find the closest time
+            // 2. If no exact hour match, find the closest time overall
             let closestTime = sortedTimes[0];
-            let minDiff = 24 * 60; // Minutes in a day
+            let minDiff = Infinity;
+            const refTotalMinutes = refHours * 60 + refMinutes;
 
             for (const time of sortedTimes) {
                 const [timeHours, timeMinutes] = time.split(':').map(part => parseInt(part, 10));
-                const timeTotalMinutes = (timeHours * 60) + (timeMinutes || 0);
-
+                const timeTotalMinutes = timeHours * 60 + timeMinutes;
                 const diff = Math.abs(timeTotalMinutes - refTotalMinutes);
+
                 if (diff < minDiff) {
                     minDiff = diff;
                     closestTime = time;
                 }
             }
-
             return closestTime;
         }
 
-        // Forecast date filtering - 24h intervals from last measurement
-        function getLogicalForecastDates() {
-            // Always return tomorrow + 3 future days
-            const now = new Date();
-            const forecastDates = [];
-
-            for (let i = 1; i <= 4; i++) {
-                const date = new Date(now);
-                date.setDate(date.getDate() + i);
-                forecastDates.push(date.toISOString().split('T')[0]);
-            }
-
-            return forecastDates;
-        }
 
         const handleRefresh = useCallback(() => {
-            // Reset state
-            setDataLoaded(false);
-            setForecastDates(getLogicalForecastDates());
-
-            // Log refresh
-            console.log("Performing full data refresh at", new Date().toISOString());
-
-            // Use a longer delay to ensure state is reset
-            setTimeout(() => {
-                loadWaterLevelData(gaugeData);
-            }, 300);
-        }, [gaugeData]);
+            console.log("Manual refresh triggered.");
+            loadWaterLevelData();
+        }, [loadWaterLevelData]); // Depend on the memoized load function
 
         // Calculate draft for a given gauge and water level
         const calculateDraft = (gaugeName, waterLevel, direction = travelDirection) => {
-            // Special case for Konstanz - return "N/A" directly
-            if (gaugeName === "Konstanz") return "N/A";
+            if (gaugeName === "Konstanz") return "N/A"; // Specific exclusion
 
             const gauge = gaugeData.find(g => g.name === gaugeName);
-            if (!gauge || !waterLevel) return null;
-
-            const customCorrection = customCorrections[direction][gauge.name] || 0;
-
-            // Use customVuistregel for Dutch gauges if available
-            if (gauge.customVuistregel !== undefined) {
-                return (parseInt(waterLevel) + gauge.customVuistregel + parseInt(customCorrection)).toFixed(0);
-            } else {
-                return (waterLevel - gauge.giw + gauge.depthAtGiw - gauge.officialSafetyMargin + customCorrection).toFixed(0);
+            // Ensure gauge exists, waterLevel is a valid number
+            if (!gauge || waterLevel === null || waterLevel === undefined || isNaN(Number(waterLevel))) {
+                 return null; // Return null if data is missing or invalid
             }
+
+            const numericWaterLevel = Number(waterLevel);
+            const customCorrection = customCorrections[direction]?.[gaugeName] || 0;
+
+            // Use customVuistregel if defined and not null/undefined
+            if (gauge.customVuistregel !== undefined && gauge.customVuistregel !== null) {
+                return (numericWaterLevel + gauge.customVuistregel + customCorrection).toFixed(0);
+            }
+            // Otherwise, use GIW calculation if GIW is valid
+            else if (gauge.giw !== null && gauge.giw !== undefined && gauge.depthAtGiw !== null && gauge.depthAtGiw !== undefined) {
+                 // Ensure GIW related values are numbers before calculation
+                 const giw = Number(gauge.giw);
+                 const depth = Number(gauge.depthAtGiw);
+                 const safety = Number(gauge.officialSafetyMargin);
+                 if (!isNaN(giw) && !isNaN(depth) && !isNaN(safety)) {
+                    return (numericWaterLevel - giw + depth - safety + customCorrection).toFixed(0);
+                 } else {
+                     return null; // Cannot calculate if GIW data is invalid
+                 }
+            }
+            // Fallback if neither method applies
+            return null;
         };
+
 
         // Calculate official rule of thumb
         const calculateOfficialRuleOfThumb = (gauge) => {
-            return (gauge.depthAtGiw - gauge.officialSafetyMargin - gauge.giw).toFixed(0);
+             // Check if calculation is possible (requires valid GIW and depth)
+            if (gauge.giw === null || gauge.giw === undefined || isNaN(Number(gauge.giw)) ||
+                gauge.depthAtGiw === null || gauge.depthAtGiw === undefined || isNaN(Number(gauge.depthAtGiw)) ||
+                gauge.officialSafetyMargin === null || gauge.officialSafetyMargin === undefined || isNaN(Number(gauge.officialSafetyMargin))) {
+                return "N/A";
+            }
+            // Exclude specific gauges where GIW is not applicable
+            if (["Nijmegen", "Tiel", "Bingen", "Iffezheim", "Konstanz", "Lobith", "Pannerdense kop"].includes(gauge.name)) {
+                 return "N/A";
+            }
+            return (Number(gauge.depthAtGiw) - Number(gauge.officialSafetyMargin) - Number(gauge.giw)).toFixed(0);
         };
 
         // Calculate custom rule of thumb for a specific direction
         const calculateCustomRuleOfThumb = (gauge, direction) => {
-            const customCorrection = customCorrections[direction][gauge.name] || 0;
+            const customCorrection = customCorrections[direction]?.[gauge.name] || 0;
 
-            // Use customVuistregel for Dutch gauges if available
-            if (gauge.customVuistregel !== undefined) {
-                return (gauge.customVuistregel + parseInt(customCorrection)).toString();
-            } else {
-                return (gauge.depthAtGiw - gauge.officialSafetyMargin + customCorrection - gauge.giw).toFixed(0);
+            // Use customVuistregel if defined
+            if (gauge.customVuistregel !== undefined && gauge.customVuistregel !== null) {
+                return (gauge.customVuistregel + customCorrection).toString();
             }
+            // Use GIW calculation if possible and applicable
+            else if (gauge.giw !== null && gauge.giw !== undefined && !isNaN(Number(gauge.giw)) &&
+                     gauge.depthAtGiw !== null && gauge.depthAtGiw !== undefined && !isNaN(Number(gauge.depthAtGiw)) &&
+                     gauge.officialSafetyMargin !== null && gauge.officialSafetyMargin !== undefined && !isNaN(Number(gauge.officialSafetyMargin)) &&
+                     !["Nijmegen", "Tiel", "Bingen", "Iffezheim", "Konstanz", "Lobith", "Pannerdense kop"].includes(gauge.name))
+            {
+                return (Number(gauge.depthAtGiw) - Number(gauge.officialSafetyMargin) + customCorrection - Number(gauge.giw)).toFixed(0);
+            }
+            // Otherwise return N/A
+            return "N/A";
         };
+
 
         // Check if a gauge is within the selected journey
-        const isInJourney = (gaugeKm) => {
-            if (!journey.start || !journey.end) return true;
-            return gaugeKm >= Math.min(journey.start, journey.end) && gaugeKm <= Math.max(journey.start, journey.end);
-        };
+        const isInJourney = useCallback((gaugeKm) => {
+            if (journey.start === null || journey.end === null) return true; // Show all if journey not fully defined
+            const startKm = Number(journey.start);
+            const endKm = Number(journey.end);
+            return gaugeKm >= Math.min(startKm, endKm) && gaugeKm <= Math.max(startKm, endKm);
+        }, [journey]);
 
         // Determine travel direction based on journey start and end
         useEffect(() => {
-            if (journey.start && journey.end) {
-                setTravelDirection(journey.start < journey.end ? 'downstream' : 'upstream');
+            if (journey.start !== null && journey.end !== null) {
+                setTravelDirection(Number(journey.start) < Number(journey.end) ? 'downstream' : 'upstream');
             }
         }, [journey]);
 
@@ -967,24 +794,31 @@
         const [forecastBottlenecks, setForecastBottlenecks] = useState([]);
 
         useEffect(() => {
-            if (!dataLoaded || Object.keys(forecasts).length === 0) return;
+            if (!dataLoaded || Object.keys(forecasts).length === 0 || forecastDates.length === 0) {
+                 setForecastBottlenecks([]); // Clear if no data
+                 return;
+            }
 
             const newForecastBottlenecks = forecastDates.map(date => {
                 let criticalGauge = null;
                 let minDraft = Infinity;
+                let forecastTimeForMinDraft = '';
 
                 gaugeData.forEach(gauge => {
-                    if (isInJourney(gauge.km) && gauge.name !== "Konstanz") {
-                        const times = Object.keys(forecasts[date]?.[gauge.name] || {});
-                        const referenceTime = currentTimes[gauge.name];
-                        const selectedTime = times.length > 0 ? getBestForecastTime(times, referenceTime) : '';
-                        const forecastValue = forecasts[date]?.[gauge.name]?.[selectedTime];
+                    // Check if gauge is in journey and has forecast data for this date
+                    if (isInJourney(gauge.km) && forecasts[date]?.[gauge.name]) {
+                        const timesObject = forecasts[date][gauge.name];
+                        const referenceTime = currentTimes[gauge.name]; // Use current measurement time as reference
+                        const selectedTime = getBestForecastTime(timesObject, referenceTime); // Find best matching forecast time
 
-                        if (forecastValue) {
-                            const draft = parseFloat(calculateDraft(gauge.name, forecastValue, travelDirection) || 0);
+                        if (selectedTime && timesObject[selectedTime] !== undefined) {
+                            const forecastValue = timesObject[selectedTime];
+                            const draft = parseFloat(calculateDraft(gauge.name, forecastValue, travelDirection));
+
                             if (!isNaN(draft) && draft < minDraft) {
                                 minDraft = draft;
                                 criticalGauge = gauge.name;
+                                forecastTimeForMinDraft = selectedTime; // Store the time of the bottleneck forecast
                             }
                         }
                     }
@@ -993,54 +827,58 @@
                 return {
                     date,
                     gauge: criticalGauge,
-                    draft: criticalGauge && minDraft !== Infinity ? minDraft.toFixed(0) : 'N/A'
+                    draft: criticalGauge && minDraft !== Infinity ? minDraft.toFixed(0) : 'N/A',
+                    time: forecastTimeForMinDraft // Add the time to the bottleneck info
                 };
             });
 
             setForecastBottlenecks(newForecastBottlenecks);
-        }, [dataLoaded, forecasts, forecastDates, gaugeData, journey, travelDirection, currentTimes, isInJourney]);
+        // Recalculate when relevant data changes
+        }, [dataLoaded, forecasts, forecastDates, gaugeData, journey, travelDirection, currentTimes, isInJourney, calculateDraft, customCorrections]);
+
 
         // Find the critical gauge (minimum draft) for the current journey
-        const findCriticalGauge = () => {
-            if (!dataLoaded) return null;
+        const findCriticalGauge = useCallback(() => {
+            if (!dataLoaded || Object.keys(waterLevels).length === 0) return null;
 
-            let criticalGauge = null;
+            let criticalGaugeName = null;
             let minDraft = Infinity;
 
             gaugeData.forEach(gauge => {
-                // Only include gauges in the journey with valid measurements
+                // Only include gauges in the journey with valid current measurements
                 if (isInJourney(gauge.km) &&
-                    waterLevels[gauge.name] !== 0 &&
-                    currentTimes[gauge.name] !== 'N/A') {
-
-                    const draft = parseFloat(calculateDraft(gauge.name, waterLevels[gauge.name], travelDirection) || 0);
-                    if (draft < minDraft) {
+                    waterLevels[gauge.name] !== null && waterLevels[gauge.name] !== undefined &&
+                    currentTimes[gauge.name] && currentTimes[gauge.name] !== 'N/A' && currentTimes[gauge.name] !== 'Invalid Time' && currentTimes[gauge.name] !== 'Parse Error')
+                {
+                    const draft = parseFloat(calculateDraft(gauge.name, waterLevels[gauge.name], travelDirection));
+                    if (!isNaN(draft) && draft < minDraft) {
                         minDraft = draft;
-                        criticalGauge = gauge.name;
+                        criticalGaugeName = gauge.name;
                     }
                 }
             });
 
-            return criticalGauge;
-        };
+            return criticalGaugeName;
+        }, [dataLoaded, waterLevels, currentTimes, gaugeData, isInJourney, travelDirection, calculateDraft, customCorrections]);
+
+
         const handleJourneyChange = (type, value) => {
             const newJourney = {
                 ...journey,
                 [type]: value ? parseInt(value, 10) : null
             };
-
             setJourney(newJourney);
-
-            // Save to cookie whenever journey changes
             setCookie('rhineDraftJourney', newJourney);
         };
 
-        const criticalGauge = findCriticalGauge();
-        const criticalDraft = criticalGauge ? calculateDraft(criticalGauge, waterLevels[criticalGauge], travelDirection) : 'N/A';
+        const criticalGaugeName = findCriticalGauge();
+        const criticalDraft = criticalGaugeName ? calculateDraft(criticalGaugeName, waterLevels[criticalGaugeName], travelDirection) : 'N/A';
 
+        // --- JSX Rendering ---
         return (
             <div className="container">
-                <div style={{
+                {/* --- Header and Controls Section --- */}
+                 <div style={{
                     display: 'flex',
                     flexWrap: 'wrap',
                     justifyContent: 'space-between',
@@ -1062,10 +900,10 @@
                                 />
                                 Auto-verversing (10 min)
                             </label>
-                            {nextRefreshTime && (
+                            {autoRefresh && nextRefreshTime && (
                                 <span style={{marginLeft: '8px', fontSize: '0.9em', color: '#aaa'}}>
-            Volgende: {nextRefreshTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
-          </span>
+                                    Volgende: {nextRefreshTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}
+                                </span>
                             )}
                         </div>
 
@@ -1073,12 +911,13 @@
                             <div className="control-group">
                                 <label>Begin (km):</label>
                                 <select
-                                    value={journey.start || ''}
+                                    value={journey.start ?? ''} // Use nullish coalescing for controlled component
                                     onChange={(e) => handleJourneyChange('start', e.target.value)}
                                 >
                                     <option value="">Selecteer begin</option>
-                                    {gaugeData.map(gauge => (
-                                        <option key={`start-${gauge.km}`}
+                                    {/* Sort gauges by KM for dropdown consistency */}
+                                    {gaugeData.slice().sort((a, b) => a.km - b.km).map(gauge => (
+                                        <option key={`start-${gauge.km}-${gauge.name}`}
                                                 value={gauge.km}>{gauge.km} ({gauge.name})</option>
                                     ))}
                                 </select>
@@ -1087,12 +926,13 @@
                             <div className="control-group">
                                 <label>Eind (km):</label>
                                 <select
-                                    value={journey.end || ''}
+                                     value={journey.end ?? ''} // Use nullish coalescing
                                     onChange={(e) => handleJourneyChange('end', e.target.value)}
                                 >
                                     <option value="">Selecteer einde</option>
-                                    {gaugeData.map(gauge => (
-                                        <option key={`end-${gauge.km}`}
+                                     {/* Sort gauges by KM */}
+                                    {gaugeData.slice().sort((a, b) => a.km - b.km).map(gauge => (
+                                        <option key={`end-${gauge.km}-${gauge.name}`}
                                                 value={gauge.km}>{gauge.km} ({gauge.name})</option>
                                     ))}
                                 </select>
@@ -1100,8 +940,8 @@
                         </div>
 
                         <div className="control-group">
-                            <button className="refresh-btn" onClick={handleRefresh} ref={refreshButtonRef}>
-                                Data opnieuw laden
+                            <button className="refresh-btn" onClick={handleRefresh} ref={refreshButtonRef} disabled={!dataLoaded && dataStatus.status === 'pending'}>
+                                {dataStatus.status === 'pending' ? 'Laden...' : 'Data opnieuw laden'}
                             </button>
                             <div className={`data-status ${dataStatus.status}`}>
                                 {dataStatus.message}
@@ -1117,78 +957,47 @@
                         alignSelf: 'flex-start',
                         marginTop: '0'
                     }}>
-                        <div style={{marginBottom: '8px', fontWeight: 'bold'}}>Kritieke diepgang:</div>
+                        <div style={{marginBottom: '8px', fontWeight: 'bold'}}>Kritieke diepgang ({travelDirection === 'downstream' ? 'Af' : 'Op'}):</div>
                         <div style={{marginBottom: '4px'}}>
-                            <span style={{display: 'inline-block', width: '70px', paddingRight: '5px'}}>Vandaag:</span>
-                            <span style={{display: 'inline-block', width: '75px'}}>{criticalDraft} cm.</span>
-                            Strecke: {criticalGauge || 'N/A'}
+                            <span style={{display: 'inline-block', width: '70px', paddingRight: '5px'}}>Nu:</span>
+                            <span style={{display: 'inline-block', width: '75px'}}>{criticalDraft !== null ? `${criticalDraft} cm` : 'N/A'}</span>
+                            ({criticalGaugeName || 'N/A'})
                         </div>
+                        {/* Display Forecast Bottlenecks */}
                         {forecastBottlenecks.map((forecast, index) => {
-                            let hourLabel;
-                            if (index === 0) {
-                                hourLabel = '24h:';
-                            } else if (index === 1) {
-                                hourLabel = '48h:';
-                            } else if (index === 2) {
-                                hourLabel = '72h:';
-                            } else {
-                                // Get the actual forecast time for this date
-                                const forecastDate = new Date(forecast.date);
-                                const gauge = forecast.gauge;
-
-                                if (gauge && forecasts[forecast.date]?.[gauge]) {
-                                    // Get all available forecast times for this gauge and date
-                                    const forecastTimes = Object.keys(forecasts[forecast.date][gauge]);
-
-                                    if (forecastTimes.length > 0) {
-                                        // Sort the times correctly by converting to minutes
-                                        const sortedTimes = forecastTimes.sort((a, b) => {
-                                            const [aHours, aMinutes] = a.split(':').map(Number);
-                                            const [bHours, bMinutes] = b.split(':').map(Number);
-                                            return ((aHours * 60) + aMinutes) - ((bHours * 60) + bMinutes);
-                                        });
-
-                                        // Get the latest time instead of earliest time
-                                        const latestTime = sortedTimes[sortedTimes.length - 1];
-
-                                        // Set the hours and minutes on the forecast date
-                                        const [hours, minutes] = latestTime.split(':').map(Number);
-                                        forecastDate.setHours(hours, minutes, 0, 0);
-                                    }
-                                }
-
-                                // Calculate hours difference directly in hours to avoid timezone issues
-                                const currentDate = new Date();
-
-                                // Calculate difference in days and convert to hours
-                                const daysDiff = Math.floor((forecastDate - currentDate) / (24 * 60 * 60 * 1000));
-                                // Only add +1 day if current time is after 7:00
-                                const hoursDiff = (currentDate.getHours() >= 7 ? daysDiff + 1 : daysDiff) * 24;
-
-                                // Add the hours difference within the day
-                                const forecastHours = forecastDate.getHours();
-                                const currentHours = currentDate.getHours();
-                                const hoursDiffToday = forecastHours - currentHours;
-
-                                // Calculate final hours difference
-                                const totalHoursDiff = hoursDiff + hoursDiffToday;
-
-                                hourLabel = `${totalHoursDiff}h:`;
-                            }
+                             // Calculate approximate hours from now
+                             const forecastDateTime = new Date(forecast.date);
+                             if (forecast.time) {
+                                const [hours, minutes] = forecast.time.split(':').map(Number);
+                                forecastDateTime.setHours(hours, minutes, 0, 0);
+                             } else {
+                                 // Default to noon if time is missing, though unlikely with current logic
+                                 forecastDateTime.setHours(12, 0, 0, 0);
+                             }
+                             const now = new Date();
+                             const diffHours = Math.round((forecastDateTime - now) / (1000 * 60 * 60));
+                             const hourLabel = `${diffHours}h:`;
 
                             return (
                                 <div key={`forecast-bottleneck-${forecast.date}`} style={{marginBottom: '4px'}}>
-            <span style={{display: 'inline-block', width: '70px', paddingRight: '5px'}}>
-              {hourLabel}
-            </span>
-                                    <span style={{display: 'inline-block', width: '75px'}}>{forecast.draft} cm.</span>
-                                    Strecke: {forecast.gauge || 'N/A'}
+                                    <span style={{display: 'inline-block', width: '70px', paddingRight: '5px'}}>
+                                      {hourLabel}
+                                    </span>
+                                    <span style={{display: 'inline-block', width: '75px'}}>{forecast.draft !== 'N/A' ? `${forecast.draft} cm` : 'N/A'}</span>
+                                     ({forecast.gauge || 'N/A'})
+                                     <span style={{fontSize: '0.8em', color: '#555', marginLeft: '5px'}}>
+                                         ({forecast.time || '?'})
+                                     </span>
                                 </div>
                             );
                         })}
+                         {dataLoaded && forecastBottlenecks.length === 0 && <div style={{fontSize: '0.9em', color: '#333'}}>Geen prognose data beschikbaar</div>}
+                         {!dataLoaded && <div style={{fontSize: '0.9em', color: '#333'}}>Prognoses laden...</div>}
                     </div>
                 </div>
 
+
+                {/* --- Main Content Table --- */}
                 <div className="main-content">
                     <div style={{overflowX: 'auto'}}>
                         <table>
@@ -1196,23 +1005,24 @@
                             <tr>
                                 <th rowSpan="2">Strecke</th>
                                 <th rowSpan="2">Naam</th>
-                                <th rowSpan="2" style={{textAlign: 'right'}}>Laatst bekende Waterstand (cm)</th>
-                                <th rowSpan="2" style={{textAlign: 'right'}}>Tendens (-24h) (cm)</th>
+                                <th rowSpan="2" style={{textAlign: 'right'}}>Waterstand (cm)</th>
+                                <th rowSpan="2" style={{textAlign: 'right'}}>Tendens (-24h)</th>
                                 <th rowSpan="2" style={{textAlign: 'right'}}>GIW (cm)</th>
                                 <th rowSpan="2" style={{textAlign: 'right'}}>TuGIW (cm)</th>
-                                <th rowSpan="2" style={{textAlign: 'right'}}>Officiële vuistregel (cm)</th>
-                                <th colSpan="2">Correctie vuistregel (cm)</th>
-                                <th colSpan="2">Aangepaste Vuistregel (cm)</th>
+                                <th rowSpan="2" style={{textAlign: 'right'}}>Off. Vuistregel</th>
+                                <th colSpan="2">Correctie (cm)</th>
+                                <th colSpan="2">Aangep. Vuistregel</th>
                                 <th rowSpan="2" style={{textAlign: 'right'}}>
-                                    Maximale diepgang
+                                    Max. Diepgang (cm)
                                 </th>
 
                                 {/* Forecast headers */}
                                 {forecastDates.map(date => (
-                                    <th key={`forecast-${date}`} rowSpan="2" style={{textAlign: 'right'}}>
-                                        {new Date(date).toLocaleDateString()}
+                                    <th key={`forecast-head-${date}`} rowSpan="2" style={{textAlign: 'right'}}>
+                                        {new Date(date + 'T12:00:00Z').toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })}
                                     </th>
                                 ))}
+                                {forecastDates.length === 0 && dataLoaded && <th rowSpan="2">Geen Prognoses</th>}
                             </tr>
                             <tr>
                                 <th style={{textAlign: 'right'}}>Op</th>
@@ -1222,19 +1032,21 @@
                             </tr>
                             </thead>
                             <tbody>
+                            {/* Filter and map gauge data */}
                             {gaugeData.filter(gauge => isInJourney(gauge.km)).map(gauge => {
-                                const isCritical = gauge.name === criticalGauge;
+                                const isCritical = gauge.name === criticalGaugeName;
+                                const currentDraft = calculateDraft(gauge.name, waterLevels[gauge.name], travelDirection);
 
                                 return (
                                     <tr key={gauge.name} className={isCritical ? 'critical-row' : ''}>
                                         <td>{gauge.streckenAbschnitt}</td>
                                         <td>
+                                            {/* Link logic based on gauge type */}
                                             <a
-                                                href={gauge.name === "Nijmegen"
-                                                    ? "https://waterinfo.rws.nl/publiek/waterhoogte/Nijmegen-haven%28NIJM%29/details"
-                                                    : gauge.name === "Tiel"
-                                                        ? "https://waterinfo.rws.nl/publiek/waterhoogte/Tiel-Waal%28TIEW%29/details"
-                                                        : `https://www.elwis.de/DE/dynamisch/Wasserstaende/Pegelvorhersage:${gauge.name.toUpperCase()}`
+                                                href={
+                                                    ["Nijmegen", "Tiel", "Lobith", "Pannerdense kop"].includes(gauge.name)
+                                                    ? `https://waterinfo.rws.nl/publiek/waterhoogte/${gauge.name.replace(/ /g, '%20')}/details` // Basic RWS link guess
+                                                    : `https://www.elwis.de/DE/dynamisch/Wasserstaende/Pegelvorhersage:${gauge.name.toUpperCase().replace(/ /g, '_')}` // ELWIS link
                                                 }
                                                 target="_blank"
                                                 rel="noopener noreferrer"
@@ -1249,40 +1061,28 @@
                                                 {gauge.name}
                                             </a>
                                         </td>
+                                        {/* Current Water Level */}
                                         <td style={{textAlign: 'right'}}>
-                                            {waterLevels[gauge.name]}
-                                            <div style={{
-                                                fontSize: '0.8em',
-                                                color: '#aaa',
-                                                fontWeight: 'normal',
-                                                marginTop: '4px'
-                                            }}>
+                                            {waterLevels[gauge.name] ?? '-'}
+                                            <div style={{fontSize: '0.8em', color: '#aaa', fontWeight: 'normal', marginTop: '4px'}}>
                                                 {currentTimes[gauge.name] || 'N/A'}
                                             </div>
                                         </td>
-                                        <td style={{textAlign: 'right'}}>{waterTrends[gauge.name]}</td>
-
-                                        {/* GIW value */}
-                                        <td style={{textAlign: 'right'}}>
-                                            {gauge.name === "Nijmegen" || gauge.name === "Tiel" || gauge.name === "Bingen" || gauge.name === "Iffezheim" || gauge.name === "Konstanz" ? "N/A" : gauge.giw}
-                                        </td>
-
-                                        {/* TuGIW value */}
-                                        <td style={{textAlign: 'right'}}>
-                                            {gauge.name === "Nijmegen" || gauge.name === "Tiel" || gauge.name === "Bingen" || gauge.name === "Iffezheim" || gauge.name === "Konstanz" ? "N/A" : gauge.depthAtGiw}
-                                        </td>
-
-                                        {/* Official rule of thumb */}
-                                        <td style={{textAlign: 'right'}}>
-                                            {gauge.name === "Nijmegen" || gauge.name === "Tiel" || gauge.name === "Bingen" || gauge.name === "Iffezheim" || gauge.name === "Konstanz" ? "N/A" : calculateOfficialRuleOfThumb(gauge)}
-                                        </td>
-
+                                        {/* Current Trend */}
+                                        <td style={{textAlign: 'right'}}>{waterTrends[gauge.name] ?? '-'}</td>
+                                        {/* GIW */}
+                                        <td style={{textAlign: 'right'}}>{calculateOfficialRuleOfThumb(gauge) !== "N/A" ? gauge.giw : 'N/A'}</td>
+                                        {/* TuGIW */}
+                                        <td style={{textAlign: 'right'}}>{calculateOfficialRuleOfThumb(gauge) !== "N/A" ? gauge.depthAtGiw : 'N/A'}</td>
+                                        {/* Official Rule */}
+                                        <td style={{textAlign: 'right'}}>{calculateOfficialRuleOfThumb(gauge)}</td>
+                                        {/* Correction Inputs */}
                                         <td style={{textAlign: 'right'}}>
                                             <input
                                                 type="number"
                                                 value={customCorrections.upstream[gauge.name] || 0}
                                                 onChange={(e) => handleCorrectionChange('upstream', gauge.name, e.target.value)}
-                                                style={{width: '50px'}}
+                                                style={{width: '50px', textAlign: 'right'}}
                                             />
                                         </td>
                                         <td style={{textAlign: 'right'}}>
@@ -1290,35 +1090,35 @@
                                                 type="number"
                                                 value={customCorrections.downstream[gauge.name] || 0}
                                                 onChange={(e) => handleCorrectionChange('downstream', gauge.name, e.target.value)}
-                                                style={{width: '50px'}}
+                                                style={{width: '50px', textAlign: 'right'}}
                                             />
                                         </td>
+                                        {/* Custom Rules */}
                                         <td style={{textAlign: 'right'}}>{calculateCustomRuleOfThumb(gauge, 'upstream')}</td>
                                         <td style={{textAlign: 'right'}}>{calculateCustomRuleOfThumb(gauge, 'downstream')}</td>
+                                        {/* Current Max Draft */}
                                         <td
                                             style={{textAlign: 'right'}}
-                                            className={isCritical ? 'critical-draft' : 'draft-highlight'}
+                                            className={isCritical ? 'critical-draft' : (currentDraft !== null ? 'draft-highlight' : '')}
                                         >
-                                            {calculateDraft(gauge.name, waterLevels[gauge.name], travelDirection)}
-                                            <div style={{fontSize: '0.8em', color: '#aaa'}}>
-                                                {currentTimes[gauge.name] || 'N/A'}
-                                            </div>
+                                            {currentDraft ?? '-'}
                                         </td>
 
                                         {/* Forecast columns */}
                                         {forecastDates.map(date => {
-                                            const times = Object.keys(forecasts[date]?.[gauge.name] || {});
+                                            const timesObject = forecasts[date]?.[gauge.name];
                                             const referenceTime = currentTimes[gauge.name];
-                                            const selectedTime = times.length > 0 ? getBestForecastTime(times, referenceTime) : '';
-                                            const forecastValue = forecasts[date]?.[gauge.name]?.[selectedTime];
+                                            const selectedTime = timesObject ? getBestForecastTime(timesObject, referenceTime) : '';
+                                            const forecastValue = timesObject && selectedTime ? timesObject[selectedTime] : undefined;
+                                            const forecastDraft = forecastValue !== undefined ? calculateDraft(gauge.name, forecastValue, travelDirection) : null;
 
                                             return (
                                                 <td key={`forecast-${gauge.name}-${date}`} style={{textAlign: 'right'}}>
-                                                    {forecastValue ? (
+                                                    {forecastDraft !== null ? (
                                                         <>
-                                                            {calculateDraft(gauge.name, forecastValue, travelDirection)}
+                                                            {forecastDraft}
                                                             <div style={{fontSize: '0.8em', color: '#aaa'}}>
-                                                                {selectedTime ? selectedTime.substring(0, 5) : ''}
+                                                                {selectedTime || ''}
                                                             </div>
                                                         </>
                                                     ) : '-'}
@@ -1328,14 +1128,23 @@
                                     </tr>
                                 );
                             })}
+                             {/* Show message if no gauges are in the selected journey */}
+                             {gaugeData.filter(gauge => isInJourney(gauge.km)).length === 0 && (
+                                <tr>
+                                    <td colSpan={11 + forecastDates.length + 2} style={{textAlign: 'center', fontStyle: 'italic', color: '#aaa'}}>
+                                        Geen peilingen geselecteerd voor deze reis. Pas begin/eind aan.
+                                    </td>
+                                </tr>
+                             )}
                             </tbody>
                         </table>
                     </div>
                 </div>
 
+                {/* --- Footer --- */}
                 <footer>
-                    <div>Waterstanden per: {lastUpdated.toLocaleString()}</div>
-                    <div>Rijn diepgang calculator</div>
+                    <div>Waterstanden per: {dataLoaded ? lastUpdated.toLocaleString() : 'Laden...'}</div>
+                    <div>Rhine Draft Data (RDD) Calculator</div>
                 </footer>
             </div>
         );
@@ -1344,5 +1153,4 @@
     ReactDOM.render(<RhineDraftCalculator/>, document.getElementById('root'));
 </script>
 </body>
-
 </html>
