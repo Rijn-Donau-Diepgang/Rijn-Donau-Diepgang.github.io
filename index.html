@@ -312,7 +312,7 @@ if (gaugeInfo.forecasts) {
         const refreshButtonRef = useRef(null);
         const [journey, setJourney] = useState(() => {
             const savedJourney = getCookie('rhineDraftJourney');
-            return savedJourney || {start: 914, end: 362}; // Default Tiel -> Maxau
+            return savedJourney || {start: 914, end: 0}; // Default Tiel -> Maxau
         });
 
         // Auto-refresh effect
