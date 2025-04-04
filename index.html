@@ -985,7 +985,7 @@ const findCriticalGauge = useCallback(() => {
                            {gaugeData.filter(gauge => isInJourney(gauge.km)).map(gauge => {
                                 const dataSourceName = gauge.apiDataName || gauge.name;
                                 const isCritical = gauge.name === criticalGaugeName;
-                                const currentDraft = calculateDraft(dataSourceName, waterLevels[dataSourceName], travelDirection);
+                                const currentDraft = calculateDraft(gauge.name, waterLevels[dataSourceName], travelDirection);
 
                                 return (
                                     <tr key={gauge.name} className={isCritical ? 'critical-row' : ''}>
