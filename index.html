@@ -170,6 +170,7 @@
         return null;
     }
 
+
     // Format time display (simplified as API provides HH:MM directly now)
     function formatTimeDisplay(timeString) {
         // Assumes timeString is already in HH:MM format or similar simple format
@@ -437,10 +438,10 @@ if (gaugeInfo.forecasts) {
     km: 592,
     streckenAbschnitt: '592-601',
     giw: 77,
-    depthAtGiw: 210,
+    depthAtGiw: 250,
     officialSafetyMargin: 30,
-    correctionOp: 57,
-    correctionAf: 57
+    correctionOp: 0,
+    correctionAf: 0
 },
 
                 {
@@ -522,10 +523,10 @@ if (gaugeInfo.forecasts) {
                     officialSafetyMargin: 0,
                     correctionOp: 0,
                     correctionAf: 0,
-                    customVuistregel: -465
+                    customVuistregel: -478
                 },
 
-                { name: 'Nijmegen', km: 883, river: 'Waal', streckenAbschnitt: '867.5-893', correctionOp: 0, correctionAf: 0, customVuistregel: -275 },
+                { name: 'Nijmegen', km: 883, river: 'Waal', streckenAbschnitt: '867.5-893', correctionOp: 0, correctionAf: 0, customVuistregel: -260 },
                 { name: 'Tiel', km: 914, river: 'Waal', streckenAbschnitt: '893-930', correctionOp: 0, correctionAf: 0, customVuistregel: 10 }
 
                 // --- End of gauge definitions ---
