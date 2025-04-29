@@ -146,9 +146,9 @@
     --col-default-width: 60px;
 
     /* Column-specific widths */
-    --col-1-width: 70px;  /* Rivier */
-    --col-2-width: 100px; /* Strecke */
-    --col-3-width: 130px; /* Naam */
+    --col-1-width: 40px;  /* Rivier */
+    --col-2-width: 50px; /* Strecke */
+    --col-3-width: 70px; /* Naam */
     --col-4-width: 45px;  /* GIW */
     --col-5-width: 45px;  /* TuGIW */
     --col-6-width: 45px;  /* Waarde Actueel */
@@ -177,6 +177,7 @@
 .original-table > tbody td:nth-child(1) {
     min-width: var(--col-1-width);
     width: var(--col-1-width);
+    max-width: var(--col-2-width);
 }
 
 /* Column 2 - Strecke */
@@ -185,6 +186,7 @@
 .original-table > tbody td:nth-child(2) {
     min-width: var(--col-2-width);
     width: var(--col-2-width);
+    max-width: var(--col-2-width);
 }
 
 /* Column 3 - Naam */
@@ -193,6 +195,7 @@
 .original-table > tbody td:nth-child(3) {
     min-width: var(--col-3-width);
     width: var(--col-3-width);
+    max-width: var(--col-3-width);
 }
 
 /* Column 4 - GIW */
@@ -988,5 +991,4 @@
 
 </script>
 </body>
-
 </html>
