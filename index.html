@@ -461,7 +461,7 @@
         const [autoRefresh, setAutoRefresh] = useState(true);
         const [nextRefreshTime, setNextRefreshTime] = useState(null);
         const refreshButtonRef = useRef(null);
-        const [journey, setJourney] = useState(() => getCookie('rhineDraftJourney') || { start: 914, end: 362 });
+        const [journey, setJourney] = useState(() => getCookie('rhineDraftJourney') || { start: 914, end: 0 });
         const [activeTab, setActiveTab] = useState('route');
         const [displayMode, setDisplayMode] = useState('draft');
         const [showUncertainty, setShowUncertainty] = useState(false);
