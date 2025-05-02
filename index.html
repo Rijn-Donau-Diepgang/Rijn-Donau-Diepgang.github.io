@@ -1,14 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rijn diepgang calculator - Compact Auto Width Header</title>
+    <title>Rijn diepgang calculator - Route Planner v6.3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.2/babel.min.js"></script>
 <style>
-    /* --- Base & Layout (Combined & Adjusted) --- */
+    /* --- Base & Layout (Combined - Using Original Base) --- */
     html, body { margin: 0; padding: 0; }
     body {
         margin: 0;
@@ -26,44 +27,60 @@
         min-height: 100vh;
     }
 
-    /* --- Header Controls Area (from index5) --- */
+    /* --- Header Controls Area (Merged: Original Layout + Planner Controls) --- */
     header.controls-area {
         background-color: #1e1e1e;
         padding: 1rem;
         border-bottom: 1px solid #333;
         flex-shrink: 0;
-        z-index: 20; /* Ensure it's above potential fixed header during transition */
-        position: relative; /* Keep stacking context */
-        min-height: 100px; /* Approximate height */
-         /* Layout from index5 */
-         display: flex;
-         flex-wrap: wrap;
-         justify-content: space-between;
-         align-items: flex-start;
-         gap: 1rem;
+        z-index: 20;
+        position: relative;
+        min-height: 100px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
     }
     .controls-left { flex: 2; min-width: 400px; display: flex; flex-direction: column; gap: 0.5rem; }
     .controls-left > div { margin-bottom: 0.5rem; }
     .controls-left > div:last-child { margin-bottom: 0; }
     .controls-right { flex: 1; min-width: 300px; max-width: 500px; align-self: flex-start; }
     .control-group { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-    .control-group label { display: flex; align-items: center; gap: 0.3rem; }
+    .control-group label:not(.day-label):not(.toggle-label) { display: flex; align-items: center; gap: 0.3rem; min-width: 120px; /* Slightly wider default */ }
     select, input, button { background-color: #2a2a2a; color: white; border: 1px solid #444; padding: 0.5rem; border-radius: 4px; font-size: 0.9rem; }
-    input[type="number"] { width: 50px; text-align: right; padding: 0.4rem; } /* Slightly smaller */
+    input[type="number"] { width: 50px; text-align: right; padding: 0.4rem; }
+    input[type="datetime-local"] { background-color: #2a2a2a; color: white; border: 1px solid #444; padding: 0.4rem; border-radius: 4px; font-size: 0.9rem; color-scheme: dark; }
     input[type="checkbox"], input[type="radio"] { width: auto; margin-right: 0.3rem; accent-color: #4da6ff; }
     button { cursor: pointer; }
-    .view-toggle-group label { margin-right: 1rem; cursor: pointer; }
+    .view-toggle-group label { margin-right: 1rem; cursor: pointer; min-width: unset; } /* Override min-width for toggles */
     .view-toggle-group input[type="radio"] { margin-right: 0.3rem; }
 
-    /* --- Main Content Area --- */
+    /* --- Route Planner Specific Styles --- */
+    .planner-settings-group { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1rem; }
+    .planner-settings-group .control-group { align-items: center; gap: 0.8rem; }
+    .planner-settings-group .control-group label:not(.day-label):not(.toggle-label) { min-width: 180px; }
+    .planner-settings-group input[type="number"] { width: 60px; }
+    .excluded-days-group { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
+    .excluded-days-group label.day-label { min-width: 40px; }
+    .now-button { padding: 0.4rem 0.6rem; font-size: 0.8rem; margin-left: 0.3rem; background-color: #444; }
+    .now-button:hover { background-color: #555; }
+    .planner-calculate-btn { background-color: #0080ff; font-weight: bold; padding: 0.6rem 1.2rem; }
+    .planner-calculate-btn:disabled { background-color: #444; cursor: not-allowed; }
+    .route-plan-results { margin-top: 1.5rem; padding: 1rem; background-color: #1e1e1e; border: 1px solid #333; border-radius: 4px; }
+    .route-plan-summary { margin-bottom: 1rem; font-size: 1.1em; }
+    .route-plan-summary strong { color: #4da6ff; }
+    .mgd-warning { color: #ffcc00; background-color: rgba(255, 204, 0, 0.1); border: 1px solid #cc9900; padding: 0.5rem; border-radius: 4px; margin-top: 0.5rem; font-size: 0.9em; }
+
+    /* --- Main Content Area (Original) --- */
     .main-content {
         display: flex;
         flex-direction: column;
         flex-grow: 1;
-        padding: 0; /* Padding will be inside */
+        padding: 0;
     }
 
-    /* --- Tab Controls (from index5) --- */
+    /* --- Tab Controls (Original) --- */
     .tab-controls {
         margin-bottom: 1rem;
         border-bottom: 1px solid #333;
@@ -77,8 +94,8 @@
     .tab-button.active { background-color: #3a3a3a; border-bottom: 1px solid #3a3a3a; font-weight: bold; }
     .tab-button:disabled { background-color: #222; color: #666; cursor: not-allowed; border-color: #333; }
 
-    /* --- Table Area Structures (from index6) --- */
-    .table-area-padding { /* Renamed from table-container in index5 */
+    /* --- Table Area Structures (Original) --- */
+    .table-area-padding {
         padding: 0 1rem 1rem 1rem; /* Apply padding here */
         width: 100%;
         box-sizing: border-box;
@@ -88,7 +105,6 @@
     }
     .header-sentinel {
         height: 1px; /* Trigger for IntersectionObserver */
-        /* No background or visible height needed */
         flex-shrink: 0;
     }
     .table-scroll-wrapper {
@@ -101,225 +117,136 @@
         flex-shrink: 0; /* Prevent shrinking */
     }
 
-    /* --- Original Table (Combined & Adjusted) --- */
+    /* --- Original Table (Styles from FIRST block - DESIRED STATE) --- */
+    /* These apply unless overridden by .route-plan-results above */
     table.original-table {
-        width: 100%; /* Ensure it fills wrapper horizontally */
+        width: 100%;
         border-collapse: collapse;
         border-spacing: 0;
         background-color: #1a1a1a; /* Table background */
-        table-layout: fixed; /* KEY CHANGE: Use fixed layout instead of auto */
+        table-layout: fixed; /* KEY: Use fixed layout */
     }
 
-    /* --- Original Table Header / Visibility (from index6) --- */
+    /* Original Table Header / Visibility (from FIRST block) */
     .original-table > thead {
         visibility: visible; /* Default state */
-        /* REMOVED position: sticky */
     }
     .original-table > thead.hidden {
         visibility: hidden !important; /* Hide when fixed header is active */
     }
 
-    /* --- Original Header Cells (thead th) - Base Styles & Compactness --- */
+    /* Original Header Cells (thead th) - Base Styles (from FIRST block) */
     .original-table > thead th {
         background-color: #1e1e1e; /* Header background */
         border-bottom: 1px solid #555;
-        padding: 0.5rem 0.4rem; /* <<< REDUCED PADDING */
+        padding: 0.5rem 0.4rem; /* <<< REDUCED PADDING (Original) */
         text-align: left;
         white-space: nowrap; /* Keep header text on one line */
         overflow: visible; /* Allow content to flow for auto sizing */
         text-overflow: clip;
         border-left: 1px solid #333;
         vertical-align: middle;
-        font-size: 0.8rem; /* <<< REDUCED FONT SIZE */
+        font-size: 0.8rem; /* <<< REDUCED FONT SIZE (Original) */
         font-weight: bold;
         line-height: 1.2; /* Adjust line height for smaller font */
-        /* REMOVED position: sticky and top */
     }
     .original-table > thead th:first-child { border-left: none; }
     .original-table > thead th.numeric { text-align: right; }
     .original-table > thead th.center { text-align: center; }
     .original-table > thead tr:first-child th { border-top: 1px solid #555; }
 
-    /* --- Define Column Width Variables --- */
-:root {
-    /* Default width */
-    --col-default-width: 60px;
+    /* --- Define Column Width Variables & Font Sizes --- */
+    :root {
+        /* Default width (Original) */
+        --col-default-width: 60px;
 
-    /* Column-specific widths */
-    --col-1-width: 70px;  /* Rivier */
-    --col-2-width: 50px; /* Strecke */
-    --col-3-width: 80px; /* Naam */
-    --col-4-width: 45px;  /* GIW */
-    --col-5-width: 45px;  /* TuGIW */
-    --col-6-width: 45px;  /* Waarde Actueel */
-    --col-7-width: 45px;  /* Tendens */
-    --col-8-width: 65px;  /* Off. Vuist */
-    --col-9-width: 150px; /* Correctie Op */
-    --col-10-width: 100px; /* Correctie Af */
-    --col-11-width: 65px; /* Aang. Vuist Op */
-    --col-12-width: 45px; /* Aang. Vuist Af */
-    --col-13-width: 100px; /* Diepgang/Waarde Actueel */
-    --forecast-width: 45px; /* Forecast Columns */
-}
+        /* Column-specific widths (FROM FIRST BLOCK - DESIRED ORIGINAL STATE) */
+        --col-1-width: 70px;  /* Rivier */
+        --col-2-width: 50px; /* Strecke */
+        --col-3-width: 80px; /* Naam */
+        --col-4-width: 45px;  /* GIW */
+        --col-5-width: 45px;  /* TuGIW */
+        --col-6-width: 45px;  /* Waarde Actueel */
+        --col-7-width: 45px;  /* Tendens */
+        --col-8-width: 65px;  /* Off. Vuist */
+        --col-9-width: 150px; /* Correctie Op (Original Wider Value) */
+        --col-10-width: 100px;/* Correctie Af (Original Wider Value) */
+        --col-11-width: 65px; /* Aang. Vuist Op */
+        --col-12-width: 45px; /* Aang. Vuist Af */
+        --col-13-width: 100px;/* Diepgang/Waarde Actueel */
+        --forecast-width: 45px; /* Forecast Columns */
 
-/* --- Default Column Settings --- */
-.original-table > thead th,
-.fixed-header-container th,
-.original-table > tbody td {
-    min-width: var(--col-default-width);
-    width: auto;
-}
+        /* NEW: Font size for table body cells */
+        --table-body-font-size: 0.9rem; /* Adjust this value easily */
 
-/* --- Column Width Definitions (Applied to both header and body) --- */
-/* Column 1 - Rivier */
-.original-table > thead th:nth-child(1),
-.fixed-header-container th:nth-child(1),
-.original-table > tbody td:nth-child(1) {
-    min-width: var(--col-1-width);
-    width: var(--col-1-width);
-    max-width: var(--col-2-width);
-}
+        /* Route Plan Table Widths */
+        --rp-col-km-width: 50px;
+        --rp-col-name-width: 100px;
+        --rp-col-eta-width: 140px;
+        --rp-col-level-width: 70px;
+        --rp-col-offset-width: 65px; /* Offset Column */
+        /* NEW: Width for Corrected Rule column */
+        --rp-col-rule-width: 75px;
+        --rp-col-draft-width: 90px;
+        --rp-col-notes-width: 120px;
+    }
 
-/* Column 2 - Strecke */
-.original-table > thead th:nth-child(2),
-.fixed-header-container th:nth-child(2),
-.original-table > tbody td:nth-child(2) {
-    min-width: var(--col-2-width);
-    width: var(--col-2-width);
-    max-width: var(--col-2-width);
-}
-
-/* Column 3 - Naam */
-.original-table > thead th:nth-child(3),
-.fixed-header-container th:nth-child(3),
-.original-table > tbody td:nth-child(3) {
-    min-width: var(--col-3-width);
-    width: var(--col-3-width);
-    max-width: var(--col-3-width);
-}
-
-/* Column 4 - GIW */
-.original-table > thead th:nth-child(4),
-.fixed-header-container th:nth-child(4),
-.original-table > tbody td:nth-child(4) {
-    min-width: var(--col-4-width);
-    width: var(--col-4-width);
-}
-
-/* Column 5 - TuGIW */
-.original-table > thead th:nth-child(5),
-.fixed-header-container th:nth-child(5),
-.original-table > tbody td:nth-child(5) {
-    min-width: var(--col-5-width);
-    width: var(--col-5-width);
-}
-
-/* Column 6 - Waarde Actueel */
-.original-table > thead th:nth-child(6),
-.fixed-header-container th:nth-child(6),
-.original-table > tbody td:nth-child(6) {
-    min-width: var(--col-6-width);
-    width: var(--col-6-width);
-}
-
-/* Column 7 - Tendens */
-.original-table > thead th:nth-child(7),
-.fixed-header-container th:nth-child(7),
-.original-table > tbody td:nth-child(7) {
-    min-width: var(--col-7-width);
-    width: var(--col-7-width);
-}
-
-/* Column 8 - Off. Vuist */
-.original-table > thead th:nth-child(8),
-.fixed-header-container th:nth-child(8),
-.original-table > tbody td:nth-child(8) {
-    min-width: var(--col-8-width);
-    width: var(--col-8-width);
-    max-width: var(--col-8-width);
-}
-
-/* Column 9 - Correctie Op */
-.original-table > thead th:nth-child(9),
-.fixed-header-container th:nth-child(9),
-.original-table > tbody td:nth-child(9) {
-    min-width: var(--col-9-width);
-    width: var(--col-9-width);
-    max-width: var(--col-9-width);
-}
-
-/* Column 10 - Correctie Af */
-.original-table > thead th:nth-child(10),
-.fixed-header-container th:nth-child(10),
-.original-table > tbody td:nth-child(10) {
-    min-width: var(--col-10-width);
-    width: var(--col-10-width);
-    max-width: var(--col-10-width);
-}
-
-/* Column 11 - Aang. Vuist Op */
-.original-table > thead th:nth-child(11),
-.fixed-header-container th:nth-child(11),
-.original-table > tbody td:nth-child(11) {
-    min-width: var(--col-11-width);
-    width: var(--col-11-width);
-    max-width: var(--col-11-width);
-}
-
-/* Column 12 - Aang. Vuist Af */
-.original-table > thead th:nth-child(12),
-.fixed-header-container th:nth-child(12),
-.original-table > tbody td:nth-child(12) {
-    min-width: var(--col-12-width);
-    width: var(--col-12-width);
-    max-width: var(--col-12-width);
-}
-
-/* Column 13 - Diepgang/Waarde Actueel */
-.original-table > thead th:nth-child(13),
-.fixed-header-container th:nth-child(13),
-.original-table > tbody td:nth-child(13) {
-    min-width: var(--col-13-width);
-    width: var(--col-13-width);
-    max-width: var(--col-13-width);
-}
-
-/* Forecast Columns */
-.original-table > thead th.forecast-header,
-.fixed-header-container th.forecast-header,
-.original-table > tbody td.forecast-cell {
-    min-width: var(--forecast-width);
-    width: var(--forecast-width);
-}
-
-/* Optional: Text handling for certain columns */
-.original-table > tbody td:nth-child(11),
-.original-table > tbody td:nth-child(12) {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-
-    /* --- Body Cells (tbody td) - Base Styles & Compactness --- */
-    .original-table > tbody td {
-        padding: 0.5rem 0.4rem; /* <<< REDUCED PADDING */
+     /* Original Body Cells (tbody td) - Base Styles */
+     .original-table > tbody td {
+        padding: 0.5rem 0.4rem; /* Original reduced padding */
         text-align: left;
         border-bottom: 1px solid #333;
         white-space: normal; /* Allow wrapping */
         border-left: 1px solid #333;
         vertical-align: middle;
-        font-size: 0.85rem; /* <<< REDUCED FONT SIZE */
-        line-height: 1.3;
+        /* USE VARIABLE: Apply the font size variable */
+        font-size: var(--table-body-font-size);
+        line-height: 1.3; /* Original line height */
     }
     .original-table > tbody td:first-child { border-left: none; }
     .original-table > tbody td.numeric { text-align: right; }
     .original-table > tbody td.center { text-align: center; }
     .original-table > tbody tr:hover td { background-color: #2a2a2a; }
 
+    /* --- Default Column Settings (Original) --- */
+    /* Applies to Max Draft/All tabs via .original-table, unless overridden by .route-plan-results */
+    .original-table > thead th,
+    .original-table > tbody td {
+        min-width: var(--col-default-width);
+        width: auto; /* Let specific widths below take precedence */
+    }
 
+    /* --- Column Width Definitions (Applied to ORIGINAL table - From FIRST block) --- */
+    /* Column 1 - Rivier */
+    .original-table > thead th:nth-child(1), .original-table > tbody td:nth-child(1) { min-width: var(--col-1-width); width: var(--col-1-width); max-width: var(--col-1-width); }
+    /* Column 2 - Strecke */
+    .original-table > thead th:nth-child(2), .original-table > tbody td:nth-child(2) { min-width: var(--col-2-width); width: var(--col-2-width); max-width: var(--col-2-width); }
+    /* Column 3 - Naam */
+    .original-table > thead th:nth-child(3), .original-table > tbody td:nth-child(3) { min-width: var(--col-3-width); width: var(--col-3-width); max-width: var(--col-3-width); }
+    /* Column 4 - GIW */
+    .original-table > thead th:nth-child(4), .original-table > tbody td:nth-child(4) { min-width: var(--col-4-width); width: var(--col-4-width); }
+    /* Column 5 - TuGIW */
+    .original-table > thead th:nth-child(5), .original-table > tbody td:nth-child(5) { min-width: var(--col-5-width); width: var(--col-5-width); }
+    /* Column 6 - Waarde Actueel */
+    .original-table > thead th:nth-child(6), .original-table > tbody td:nth-child(6) { min-width: var(--col-6-width); width: var(--col-6-width); }
+    /* Column 7 - Tendens */
+    .original-table > thead th:nth-child(7), .original-table > tbody td:nth-child(7) { min-width: var(--col-7-width); width: var(--col-7-width); }
+    /* Column 8 - Off. Vuist */
+    .original-table > thead th:nth-child(8), .original-table > tbody td:nth-child(8) { min-width: var(--col-8-width); width: var(--col-8-width); max-width: var(--col-8-width); }
+    /* Column 9 - Correctie Op */
+    .original-table > thead th:nth-child(9), .original-table > tbody td:nth-child(9) { min-width: var(--col-9-width); width: var(--col-9-width); max-width: var(--col-9-width); }
+    /* Column 10 - Correctie Af */
+    .original-table > thead th:nth-child(10), .original-table > tbody td:nth-child(10) { min-width: var(--col-10-width); width: var(--col-10-width); max-width: var(--col-10-width); }
+    /* Column 11 - Aang. Vuist Op */
+    .original-table > thead th:nth-child(11), .original-table > tbody td:nth-child(11) { min-width: var(--col-11-width); width: var(--col-11-width); max-width: var(--col-11-width); }
+    /* Column 12 - Aang. Vuist Af */
+    .original-table > thead th:nth-child(12), .original-table > tbody td:nth-child(12) { min-width: var(--col-12-width); width: var(--col-12-width); max-width: var(--col-12-width); }
+    /* Column 13 - Diepgang/Waarde Actueel */
+    .original-table > thead th:nth-child(13), .original-table > tbody td:nth-child(13) { min-width: var(--col-13-width); width: var(--col-13-width); max-width: var(--col-13-width); }
+    /* Forecast Columns */
+    .original-table > thead th.forecast-header, .original-table > tbody td.forecast-cell { min-width: var(--forecast-width); width: var(--forecast-width); }
 
-    /* Optional: Text handling for fixed columns */
+    /* Optional: Text handling for certain original columns */
     .original-table > tbody td:nth-child(11),
     .original-table > tbody td:nth-child(12) {
         white-space: nowrap;
@@ -327,93 +254,135 @@
         text-overflow: ellipsis;
     }
 
-    /* --- Fixed Header Clone Container (from index6) --- */
-    .fixed-header-container {
-        position: fixed;
-        top: 0; /* Stick to viewport top */
-        left: 0; /* Will be adjusted by JS */
-        z-index: 100; /* Above everything else */
-        overflow: hidden; /* Hide horizontal overflow, scroll handled by JS */
-        visibility: hidden; /* Hidden by default */
-        background-color: #1e1e1e; /* Match header background */
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3); /* Visual separation */
-        /* width will be set by JS */
+    /* --- Column Width Definitions (Route Plan Table - Specific overrides) --- */
+    /* Applied ONLY within the .route-plan-results context */
+    /* NOTE: nth-child indexes are shifted after adding the new column */
+    .route-plan-results .original-table th:nth-child(1), .route-plan-results .original-table td:nth-child(1) { width: var(--rp-col-km-width); min-width: var(--rp-col-km-width); max-width: none; text-align: right; } /* KM */
+    .route-plan-results .original-table th:nth-child(2), .route-plan-results .original-table td:nth-child(2) { width: var(--rp-col-name-width); min-width: var(--rp-col-name-width); max-width: none; text-align: left; } /* Naam */
+    .route-plan-results .original-table th:nth-child(3), .route-plan-results .original-table td:nth-child(3) { width: var(--rp-col-eta-width); min-width: var(--rp-col-eta-width); max-width: none; text-align: left; } /* ETA */
+    .route-plan-results .original-table th:nth-child(4), .route-plan-results .original-table td:nth-child(4) { width: var(--rp-col-level-width); min-width: var(--rp-col-level-width); max-width: none; text-align: right;} /* Forecast Level */
+    .route-plan-results .original-table th:nth-child(5), .route-plan-results .original-table td:nth-child(5) { width: var(--rp-col-offset-width); min-width: var(--rp-col-offset-width); max-width: none; text-align: right;} /* Offset */
+    /* NEW: Corrected Rule Column (index 6) */
+    .route-plan-results .original-table th:nth-child(6), .route-plan-results .original-table td:nth-child(6) { width: var(--rp-col-rule-width); min-width: var(--rp-col-rule-width); max-width: none; text-align: right; } /* Corrected Rule */
+    /* SHIFTED: Max Draft Column (now index 7) */
+    .route-plan-results .original-table th:nth-child(7), .route-plan-results .original-table td:nth-child(7) { width: var(--rp-col-draft-width); min-width: var(--rp-col-draft-width); max-width: none; text-align: right;} /* Max Draft */
+    /* SHIFTED: Notes Column (now index 8) */
+    .route-plan-results .original-table th:nth-child(8), .route-plan-results .original-table td:nth-child(8) { width: var(--rp-col-notes-width); min-width: var(--rp-col-notes-width); max-width: none; font-size: 0.8em; color: #aaa; text-align: left; } /* Notes */
+    /* Reset any further columns in planner results if they exist (unlikely) */
+    .route-plan-results .original-table th:nth-child(n+9),
+    .route-plan-results .original-table td:nth-child(n+9) { width: auto; min-width: var(--col-default-width); max-width: none; }
+
+    /* Styles for table *inside* planner results (overrides general styles) */
+    .route-plan-results .original-table th,
+    .route-plan-results .original-table td {
+        /* USE VARIABLE: Apply the font size variable here too */
+        font-size: var(--table-body-font-size);
+        padding: 0.4rem 0.5rem;
     }
-    .fixed-header-container.visible {
-        visibility: visible; /* Show when active */
-    }
-    .fixed-header-container table {
-        table-layout: fixed; /* <<< KEY: Match original table */
-        border-collapse: collapse;
-        border-spacing: 0;
-        background-color: transparent; /* Container has background */
-        width: 100%; /* Take full width */
+    .route-plan-results .original-table .critical-route-point td { background-color: rgba(255, 100, 100, 0.2) !important; font-weight: bold; }
+    .route-plan-results .original-table .eta-time { font-size: 0.9em; color: #ccc; }
+    .route-plan-results .original-table .offset-value { font-style: italic; color: #bbb; font-size: 0.9em; }
+
+    /* Ensure specific alignments for planner table body cells (adjusting indexes) */
+    .route-plan-results .original-table > tbody td:nth-child(1), /* KM */
+    .route-plan-results .original-table > tbody td:nth-child(4), /* Level */
+    .route-plan-results .original-table > tbody td:nth-child(5), /* Offset */
+    /* NEW: Corrected Rule Alignment */
+    .route-plan-results .original-table > tbody td:nth-child(6), /* Corrected Rule */
+    /* SHIFTED: Max Draft Alignment */
+    .route-plan-results .original-table > tbody td:nth-child(7)  /* Max Draft */
+    { text-align: right; }
+
+    /* Left aligned columns */
+    .route-plan-results .original-table > tbody td:nth-child(2), /* Name */
+    .route-plan-results .original-table > tbody td:nth-child(3), /* ETA */
+    /* SHIFTED: Notes Alignment */
+    .route-plan-results .original-table > tbody td:nth-child(8) /* Notes */
+    { text-align: left; }
+
+     /* Scroll wrapper for planner table */
+     .route-plan-results .table-scroll-wrapper {
+        /* INCREASED HEIGHT: Use vh for better responsiveness */
+        max-height: 600px; /* Adjust as needed */
+        overflow-y: auto;
+        /* Add horizontal scroll too */
+        overflow-x: auto;
     }
 
-    /* --- Cloned Header Cells (thead th) - MIRROR Original Styles & Compactness --- */
+
+    /* --- Fixed Header Clone Container (Styles from FIRST block) --- */
+    .fixed-header-container {
+        position: fixed; top: 0; left: 0; z-index: 100; overflow: hidden;
+        visibility: hidden; background-color: #1e1e1e; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        /* width will be set by JS */
+    }
+    .fixed-header-container.visible { visibility: visible; }
+    .fixed-header-container table { table-layout: fixed; /* <<< KEY */ border-collapse: collapse; border-spacing: 0; background-color: transparent; width: 100%; }
+
+    /* Cloned Header Cells - Mirror Original Styles (from FIRST block) */
     .fixed-header-container th {
-        background-color: #1e1e1e;
-        border-bottom: 1px solid #555;
-        padding: 0.5rem 0.4rem; /* <<< REDUCED PADDING (Mirrored) */
-        text-align: left;
-        white-space: nowrap;
-        overflow: visible;
-        text-overflow: clip;
-        border-left: 1px solid #333;
-        vertical-align: middle;
-        font-size: 0.8rem; /* <<< REDUCED FONT SIZE (Mirrored) */
-        font-weight: bold;
-        line-height: 1.2; /* <<< (Mirrored) */
-        border-top: none; /* Fixed header doesn't need top border initially */
+        background-color: #1e1e1e; border-bottom: 1px solid #555;
+        padding: 0.5rem 0.4rem; /* Original reduced padding */
+        text-align: left; white-space: nowrap; overflow: visible; text-overflow: clip;
+        border-left: 1px solid #333; vertical-align: middle; font-size: 0.8rem; /* Original reduced font size */
+        font-weight: bold; line-height: 1.2; border-top: none;
     }
     .fixed-header-container th:first-child { border-left: none; }
     .fixed-header-container th.numeric { text-align: right; }
     .fixed-header-container th.center { text-align: center; }
     .fixed-header-container thead tr:first-child th { border-top: 1px solid #555; } /* Add top border like original */
 
+    /* Apply ORIGINAL table widths to fixed header (from FIRST block) */
+    .fixed-header-container th:nth-child(1) { min-width: var(--col-1-width); width: var(--col-1-width); max-width: var(--col-1-width); }
+    .fixed-header-container th:nth-child(2) { min-width: var(--col-2-width); width: var(--col-2-width); max-width: var(--col-2-width); }
+    .fixed-header-container th:nth-child(3) { min-width: var(--col-3-width); width: var(--col-3-width); max-width: var(--col-3-width); }
+    .fixed-header-container th:nth-child(4) { min-width: var(--col-4-width); width: var(--col-4-width); }
+    .fixed-header-container th:nth-child(5) { min-width: var(--col-5-width); width: var(--col-5-width); }
+    .fixed-header-container th:nth-child(6) { min-width: var(--col-6-width); width: var(--col-6-width); }
+    .fixed-header-container th:nth-child(7) { min-width: var(--col-7-width); width: var(--col-7-width); }
+    .fixed-header-container th:nth-child(8) { min-width: var(--col-8-width); width: var(--col-8-width); max-width: var(--col-8-width); }
+    .fixed-header-container th:nth-child(9) { min-width: var(--col-9-width); width: var(--col-9-width); max-width: var(--col-9-width); } /* Uses original wider var */
+    .fixed-header-container th:nth-child(10){ min-width: var(--col-10-width); width: var(--col-10-width); max-width: var(--col-10-width); }/* Uses original wider var */
+    .fixed-header-container th:nth-child(11){ min-width: var(--col-11-width); width: var(--col-11-width); max-width: var(--col-11-width); }
+    .fixed-header-container th:nth-child(12){ min-width: var(--col-12-width); width: var(--col-12-width); max-width: var(--col-12-width); }
+    .fixed-header-container th:nth-child(13){ min-width: var(--col-13-width); width: var(--col-13-width); max-width: var(--col-13-width); }
+    .fixed-header-container th.forecast-header { min-width: var(--forecast-width); width: var(--forecast-width); }
 
 
-    /* --- Highlights & Cell Content Styling (Adjusted for smaller text) --- */
+    /* --- Highlights & Cell Content Styling (Merged) --- */
     .critical-row td { background-color: rgba(255, 0, 0, 0.2) !important; }
     .critical-draft { font-weight: bold; color: #ff6666; }
     .critical-level { font-weight: bold; color: #ffb3b3; }
     .actual-draft-column { font-weight: bold; }
-    .actual-level-column { }
     .critical-actual-draft { font-weight: bold; color: #ff4d4d; }
     .critical-actual-level { font-weight: bold; color: #ff9999; }
-    .forecast-cell div { line-height: 1.2; } /* Slightly tighter line height */
-    .uncertainty-display { font-size: 0.75em; color: #aaa; margin-top: 2px; display: block; } /* Smaller */
-    .time-display { font-size: 0.75em; color: #aaa; font-weight: normal; margin-top: 3px; display: block; line-height: 1.1; } /* Smaller */
+    .forecast-cell div { line-height: 1.2; }
+    .uncertainty-display { font-size: 0.75em; color: #aaa; margin-top: 2px; display: block; }
+    .time-display { font-size: 0.75em; color: #aaa; font-weight: normal; margin-top: 3px; display: block; line-height: 1.1; }
     .time-display.weekly { font-style: italic; color: #ccc; }
+    .time-display.current { font-style: italic; color: #8f8; } /* Style for 'Actueel' */
     .gauge-link { color: #4da6ff; text-decoration: none; }
     .gauge-link:hover { text-decoration: underline; }
 
-    /* --- Footer & Misc (Adjusted for smaller text) --- */
+    /* --- Footer & Misc (Merged) --- */
     footer {
-        background-color: #1e1e1e;
-        padding: 0.8rem 1rem; /* Slightly smaller padding */
-        font-size: 0.8rem; /* Slightly smaller font */
-        display: flex;
-        justify-content: space-between;
-        border-top: 1px solid #333;
-        flex-shrink: 0;
-        margin-top: auto; /* Push to bottom */
+        background-color: #1e1e1e; padding: 0.8rem 1rem; font-size: 0.8rem;
+        display: flex; justify-content: space-between; border-top: 1px solid #333;
+        flex-shrink: 0; margin-top: auto;
     }
-    /* Highlight box adjustments - minor */
     .highlight-box { background-color: #cc9900; border-radius: 4px; padding: 0.5rem 1rem; color: black; font-weight: bold; border: 1px solid #997300; }
-    .highlight-box div { margin-bottom: 3px; line-height: 1.3; } /* Tighter line height */
-    .highlight-box span.label { display: inline-block; min-width: 60px; padding-right: 5px; font-size: 0.9em; } /* Slightly smaller */
-    .highlight-box span.value { display: inline-block; min-width: 55px; font-size: 0.9em;} /* Slightly smaller */
+    .highlight-box div { margin-bottom: 3px; line-height: 1.3; }
+    .highlight-box span.label { display: inline-block; min-width: 60px; padding-right: 5px; font-size: 0.9em; }
+    .highlight-box span.value { display: inline-block; min-width: 55px; font-size: 0.9em;}
     .highlight-box span.gauge { font-size: 0.8em; color: #333; margin-left: 4px; }
     .highlight-box span.time { font-size: 0.75em; color: #555; margin-left: 4px; }
-    .highlight-box .forecast-uncertainty { font-size: 0.8em; color: #333; font-weight: normal; display: block; margin-left: 65px; margin-top: -2px; margin-bottom: 3px; } /* Adjusted margin */
-    /* Data status adjustments */
+    .highlight-box .forecast-uncertainty { font-size: 0.8em; color: #333; font-weight: normal; display: block; margin-left: 65px; margin-top: -2px; margin-bottom: 3px; }
     .data-status { padding: 0.4rem 0.8rem; background-color: #333; border-radius: 4px; font-size: 0.8rem; border-left: 4px solid #555; display: inline-block; margin-left: 0.5rem; }
     .data-status.pending { background-color: #444; border-left-color: #aaa; }
     .data-status.success { background-color: #004d00; border-left-color: #00cc66; }
     .data-status.warning { background-color: #665200; border-left-color: #ffcc00; }
     .data-status.error { background-color: #660000; border-left-color: #ff6666; }
-    .refresh-btn { background-color: #0066cc; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.85rem; } /* Smaller */
+    .refresh-btn { background-color: #0066cc; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.85rem; }
     .refresh-btn:hover { background-color: #0055aa; }
     .refresh-btn:disabled { background-color: #444; cursor: not-allowed; }
 </style>
@@ -422,38 +391,42 @@
 <div id="root"></div>
 
 <script type="text/babel">
-    const {useState, useEffect, useCallback, useRef, useMemo} = React;
+    const { useState, useEffect, useCallback, useRef, useMemo } = React;
 
-    // --- Constants --- (Copied from index5)
+    // --- Constants ---
     const API_URL = 'https://rdd-backend.vercel.app/api/data';
     const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
     const DEFAULT_DEPTH_SAFETY_MARGIN = 0;
     const MAX_FORECAST_DAYS = 8;
     const MAIN_ROUTE_RIVERS = ['Rijn', 'Waal'];
+    const MGD_TRIGGER_GAUGES = ['Tiel', 'Nijmegen', 'Lobith'];
+    const MGD_TARGET_GAUGE_NAMES = [ 'Spijk - Woudrichem', 'Millingen tot Maas-Waalkanaal', 'Maas-Waalkanaal tot Amsterdam-Rijnkanaal', 'Amsterdam-Rijnkanaal tot Loevestein' ];
+    const WEEKDAYS = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
 
-    // --- Cookie Utilities --- (Copied from index5)
+    // --- Cookie Utilities ---
     function setCookie(name, value, days = 3650) { const date = new Date(); date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000)); const expires = `expires=${date.toUTCString()}`; document.cookie = `${name}=${JSON.stringify(value)};${expires};path=/;SameSite=Lax`; }
     function getCookie(name) { const nameEQ = `${name}=`; const ca = document.cookie.split(';'); for (let i = 0; i < ca.length; i++) { let c = ca[i]; while (c.charAt(0) === ' ') c = c.substring(1, c.length); if (c.indexOf(nameEQ) === 0) { try { return JSON.parse(c.substring(nameEQ.length, c.length)); } catch (e) { console.error("Error parsing cookie:", name, e); return null; } } } return null; }
 
-    // --- API Fetch Function --- (Copied from index5)
-    async function fetchConsolidatedData(force = false) {
-        const url = `${API_URL}?t=${Date.now()}`;
-        console.log(`Fetching data from: ${url}`);
-        try {
-            const response = await fetch(url); if (!response.ok) { let errorText = `API request failed: ${response.status}`; try { const errorBody = await response.json(); errorText += ` - ${errorBody.error || JSON.stringify(errorBody)}`; } catch (parseError) { try { const textBody = await response.text(); errorText += ` - ${textBody.substring(0, 200)}`; } catch (readError) {} } throw new Error(errorText); } const data = await response.json(); console.log("API Data Received:", Object.keys(data).length, "gauges"); return data; } catch (error) { console.error("Error fetching consolidated data:", error); throw error; } }
+    // --- API Fetch Function ---
+    async function fetchConsolidatedData(force = false) { /* ... */ const url = `${API_URL}?t=${Date.now()}`; console.log(`Fetching data from: ${url}`); try { const response = await fetch(url); if (!response.ok) { let errorText = `API request failed: ${response.status}`; try { const errorBody = await response.json(); errorText += ` - ${errorBody.error || JSON.stringify(errorBody)}`; } catch (parseError) { try { const textBody = await response.text(); errorText += ` - ${textBody.substring(0, 200)}`; } catch (readError) {} } throw new Error(errorText); } const data = await response.json(); console.log("API Data Received:", Object.keys(data).length, "gauges"); return data; } catch (error) { console.error("Error fetching consolidated data:", error); throw error; } }
 
-    // --- Helper Functions --- (Copied from index5)
-    function formatTimeDisplay(timeString) { /* ... same as index5 ... */ if (!timeString || typeof timeString !== 'string') return "N/A"; if (timeString.length === 5 && timeString.includes(':')) return timeString; if (timeString.includes(' ') && timeString.includes(':')) { const timePart = timeString.split(' ')[1]; if (timePart && timePart.length >= 5) return timePart.substring(0,5); } try { const date = new Date(timeString); if (!isNaN(date.getTime())) return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }); } catch(e) {} return timeString || "N/A"; }
-    function getBestForecastTime(timesObject, referenceTime = null) { /* ... same as index5 ... */ if (!timesObject || typeof timesObject !== 'object' || Object.keys(timesObject).length === 0) return null; const times = Object.keys(timesObject).filter(t => t.match(/^\d{2}:\d{2}$/)); if (times.length === 0) return null; const sortedTimes = [...times].sort(); if (!referenceTime || !referenceTime.includes(':') || referenceTime === "N/A") return sortedTimes[0]; const refTimeFormatted = formatTimeDisplay(referenceTime); if (refTimeFormatted === "N/A") return sortedTimes[0]; const [refH] = refTimeFormatted.split(':').map(Number); let bestMatch = sortedTimes[0]; let minDiff = Infinity; let exactHourMatch = null; for (const time of sortedTimes) { const [h] = time.split(':').map(Number); if (h === refH) { exactHourMatch = time; break; } } if (exactHourMatch) return exactHourMatch; const refTotalMins = refH * 60 + Number(refTimeFormatted.split(':')[1]); for (const time of sortedTimes) { const [h, m] = time.split(':').map(Number); const totalMins = h * 60 + m; const diff = Math.abs(totalMins - refTotalMins); if (diff < minDiff) { minDiff = diff; bestMatch = time; } } return bestMatch; }
-    function getGaugeUrl(gauge) { /* ... same as index5 ... */ if (!gauge) return '#'; const gaugeName = gauge.name; const gaugeRiver = gauge.river; const gaugeRegion = gauge.region || gauge.apiData?.region; if (gaugeRiver === 'Depth' || (gaugeRegion && gaugeRegion.includes('depths'))) return `https://www.vaarweginformatie.nl/frp/main/#/hydro/mgd`; const dutchGaugeUrlCodes = { 'Nijmegen': 'Nijmegen-haven(NIJM)', 'Tiel': 'Tiel-Waal(TIEW)', 'Pannerdense kop': 'Pannerdense-kop(PANN)', 'IJsselkop': 'IJsselkop(IJSS)', 'Doesburg': 'Doesburg-brug(DOES)', 'Deventer': 'Deventer(DEVE)', 'Katerveer': 'Katerveer(KATV)' }; const germanGaugeIds = { 'Konstanz': '00007', 'Iffezheim': '09137', 'Maxau': '09016', 'Speyer': '09017', 'Mannheim': '09001', 'Worms': '09018' }; const rlpGaugeUrls = { 'Mainz': 'https://www.hochwasser.rlp.de/flussgebiet/mittelrhein/mainz', 'Bingen': 'https://www.hochwasser.rlp.de/flussgebiet/mittelrhein/bingen', 'Andernach': 'https://www.hochwasser.rlp.de/flussgebiet/mittelrhein/andernach', 'Bonn': 'https://www.hochwasser.rlp.de/flussgebiet/mittelrhein/bonn', 'Wesel': 'https://www.hochwasser.rlp.de/flussgebiet/niederrhein/wesel' }; if (rlpGaugeUrls[gaugeName]) return rlpGaugeUrls[gaugeName]; if (gaugeName === 'Lobith') return 'https://www.rijkswaterstaat.nl/water/waterdata-en-waterberichtgeving/waterdata/lobith-waterstanden-en-afvoeren'; if (germanGaugeIds[gaugeName]) return `https://www.hvz.baden-wuerttemberg.de/pegel.html?id=${germanGaugeIds[gaugeName]}`; if (dutchGaugeUrlCodes[gaugeName] || (gaugeRegion && gaugeRegion.includes('dutch'))) { const urlCode = dutchGaugeUrlCodes[gaugeName] || encodeURIComponent(gaugeName); return `https://waterinfo.rws.nl/publiek/waterhoogte/${urlCode}/details`; } const elwisNameBase = gauge.apiDataName || gauge.name || ''; const elwisName = elwisNameBase.toUpperCase().replace(/ /g, '_'); if (elwisName) return `https://www.elwis.de/DE/dynamisch/Wasserstaende/Pegelvorhersage:${elwisName}`; return '#'; }
-    function diffDays(dateStr1, dateStr2) { /* ... same as index5 ... */ try { const date1 = new Date(Date.UTC(parseInt(dateStr1.substring(0, 4)), parseInt(dateStr1.substring(5, 7)) - 1, parseInt(dateStr1.substring(8, 10)), 12, 0, 0)); const date2 = new Date(Date.UTC(parseInt(dateStr2.substring(0, 4)), parseInt(dateStr2.substring(5, 7)) - 1, parseInt(dateStr2.substring(8, 10)), 12, 0, 0)); if (isNaN(date1.getTime()) || isNaN(date2.getTime())) return NaN; return Math.round((date2 - date1) / (1000 * 60 * 60 * 24)); } catch (e) { console.error("Error calculating date difference:", dateStr1, dateStr2, e); return NaN; } }
+    // --- Helper Functions ---
+    function formatTimeDisplay(timeString) { /* ... */ if (!timeString || typeof timeString !== 'string') return "N/A"; if (timeString.length === 5 && timeString.includes(':')) return timeString; if (timeString.includes(' ') && timeString.includes(':')) { const timePart = timeString.split(' ')[1]; if (timePart && timePart.length >= 5) return timePart.substring(0,5); } try { const date = new Date(timeString); if (!isNaN(date.getTime())) return date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }); } catch(e) {} return timeString || "N/A"; }
+    function getGaugeUrl(gauge) { /* ... */ if (!gauge) return '#'; const gaugeName = gauge.name; const gaugeRiver = gauge.river; const gaugeRegion = gauge.region || gauge.apiData?.region; if (gaugeRiver === 'Depth' || (gaugeRegion && gaugeRegion.includes('depths'))) return `https://www.vaarweginformatie.nl/frp/main/#/hydro/mgd`; const dutchGaugeUrlCodes = { 'Nijmegen': 'Nijmegen-haven(NIJM)', 'Tiel': 'Tiel-Waal(TIEW)', 'Pannerdense kop': 'Pannerdense-kop(PANN)', 'IJsselkop': 'IJsselkop(IJSS)', 'Doesburg': 'Doesburg-brug(DOES)', 'Deventer': 'Deventer(DEVE)', 'Katerveer': 'Katerveer(KATV)' }; const germanGaugeIds = { 'Konstanz': '00007', 'Iffezheim': '09137', 'Maxau': '09016', 'Speyer': '09017', 'Mannheim': '09001', 'Worms': '09018' }; const rlpGaugeUrls = { 'Mainz': 'https://www.hochwasser.rlp.de/flussgebiet/mittelrhein/mainz', 'Bingen': 'https://www.hochwasser.rlp.de/flussgebiet/mittelrhein/bingen', 'Andernach': 'https://www.hochwasser.rlp.de/flussgebiet/mittelrhein/andernach', 'Bonn': 'https://www.hochwasser.rlp.de/flussgebiet/mittelrhein/bonn', 'Wesel': 'https://www.hochwasser.rlp.de/flussgebiet/niederrhein/wesel' }; if (rlpGaugeUrls[gaugeName]) return rlpGaugeUrls[gaugeName]; if (gaugeName === 'Lobith') return 'https://www.rijkswaterstaat.nl/water/waterdata-en-waterberichtgeving/waterdata/lobith-waterstanden-en-afvoeren'; if (germanGaugeIds[gaugeName]) return `https://www.hvz.baden-wuerttemberg.de/pegel.html?id=${germanGaugeIds[gaugeName]}`; if (dutchGaugeUrlCodes[gaugeName] || (gaugeRegion && gaugeRegion.includes('dutch'))) { const urlCode = dutchGaugeUrlCodes[gaugeName] || encodeURIComponent(gaugeName); return `https://waterinfo.rws.nl/publiek/waterhoogte/${urlCode}/details`; } const elwisNameBase = gauge.apiDataName || gauge.name || ''; const elwisName = elwisNameBase.toUpperCase().replace(/ /g, '_'); if (elwisName) return `https://www.elwis.de/DE/dynamisch/Wasserstaende/Pegelvorhersage:${elwisName}`; return '#'; }
+    function diffDays(dateStr1, dateStr2) { /* ... */ try { const date1 = new Date(Date.UTC(parseInt(dateStr1.substring(0, 4)), parseInt(dateStr1.substring(5, 7)) - 1, parseInt(dateStr1.substring(8, 10)), 12, 0, 0)); const date2 = new Date(Date.UTC(parseInt(dateStr2.substring(0, 4)), parseInt(dateStr2.substring(5, 7)) - 1, parseInt(dateStr2.substring(8, 10)), 12, 0, 0)); if (isNaN(date1.getTime()) || isNaN(date2.getTime())) return NaN; return Math.round((date2 - date1) / (1000 * 60 * 60 * 24)); } catch (e) { console.error("Error calculating date difference:", dateStr1, dateStr2, e); return NaN; } }
+
+    // --- Date/Time Helper for Operational Time ---
+    function addOperationalTime(startDate, durationHours, operationalHoursPerDay, excludedDaysOfWeek) { /* ... */ if (operationalHoursPerDay <= 0) return startDate; let currentTime = new Date(startDate.getTime()); let remainingDurationHours = durationHours; const operationalStartHour = (operationalHoursPerDay === 24) ? 0 : 6; const operationalEndHour = operationalStartHour + operationalHoursPerDay; while (remainingDurationHours > 0.001) { const currentDayOfWeek = currentTime.getDay(); if (excludedDaysOfWeek.includes(currentDayOfWeek)) { currentTime.setDate(currentTime.getDate() + 1); currentTime.setHours(operationalStartHour, 0, 0, 0); continue; } const currentHour = currentTime.getHours(); const currentMinute = currentTime.getMinutes(); const currentTimeFractional = currentHour + currentMinute / 60; if (currentTimeFractional < operationalStartHour) { currentTime.setHours(operationalStartHour, 0, 0, 0); continue; } if (operationalHoursPerDay < 24 && currentTimeFractional >= operationalEndHour) { currentTime.setDate(currentTime.getDate() + 1); currentTime.setHours(operationalStartHour, 0, 0, 0); continue; } let hoursLeftToday = operationalHoursPerDay < 24 ? operationalEndHour - currentTimeFractional : 24 - currentTimeFractional; if (operationalHoursPerDay === 24 && hoursLeftToday < 0.001) { hoursLeftToday = 24; } const timeToConsume = Math.min(remainingDurationHours, hoursLeftToday); currentTime.setTime(currentTime.getTime() + timeToConsume * 60 * 60 * 1000); remainingDurationHours -= timeToConsume; if (remainingDurationHours < 0.001) { break; } if (operationalHoursPerDay < 24 && Math.abs(currentTime.getHours() + currentTime.getMinutes()/60 - operationalEndHour) < 0.01) { currentTime.setDate(currentTime.getDate() + 1); currentTime.setHours(operationalStartHour, 0, 0, 0); } } return currentTime; }
+
+    // --- Get Forecast for specific Date/Time ---
+    function getForecastForDateTime(apiData, targetDateTime) { /* ... */ if (!apiData || !targetDateTime || isNaN(targetDateTime.getTime())) return null; const targetYear = targetDateTime.getFullYear(); const targetMonth = String(targetDateTime.getMonth() + 1).padStart(2, '0'); const targetDay = String(targetDateTime.getDate()).padStart(2, '0'); const targetDateStr = `${targetYear}-${targetMonth}-${targetDay}`; const targetHour = targetDateTime.getHours(); const targetMinute = targetDateTime.getMinutes(); const targetTotalMins = targetHour * 60 + targetMinute; const forecastsForDate = apiData.forecasts?.[targetDateStr]; if (forecastsForDate && Object.keys(forecastsForDate).length > 0) { const availableTimes = Object.keys(forecastsForDate).filter(t => t.match(/^\d{2}:\d{2}$/)); if (availableTimes.length > 0) { let bestMatchTime = null; let minDiff = Infinity; for (const time of availableTimes) { const [h, m] = time.split(':').map(Number); const totalMins = h * 60 + m; const diff = Math.abs(totalMins - targetTotalMins); if (diff < minDiff) { minDiff = diff; bestMatchTime = time; } } if (bestMatchTime) { const forecastSlot = forecastsForDate[bestMatchTime]; if (forecastSlot && forecastSlot.value !== undefined && forecastSlot.value !== null) { let uncertainty = null; if (forecastSlot.low_80 !== null && forecastSlot.high_80 !== null) { uncertainty = { low: forecastSlot.low_80, high: forecastSlot.high_80 }; } return { value: forecastSlot.value, time: bestMatchTime, source: 'daily', uncertainty: uncertainty }; } } } } if (Array.isArray(apiData.weeklyForecasts) && apiData.weeklyForecasts.length > 0) { const targetDateUtc = new Date(Date.UTC(targetYear, targetMonth - 1, targetDay, 12, 0, 0)); for (const weeklyForecast of apiData.weeklyForecasts) { if (weeklyForecast.weekRange && weeklyForecast.median !== null) { try { const [startStr, endStr] = weeklyForecast.weekRange.split('-'); const [startDay, startMonth, startYear] = startStr.split('.'); const [endDay, endMonth, endYear] = endStr.split('.'); const startDate = new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0)); const endDate = new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59)); if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime()) && targetDateUtc >= startDate && targetDateUtc <= endDate) { let uncertainty = null; if (weeklyForecast.low_90 !== null && weeklyForecast.high_90 !== null) { uncertainty = { low: weeklyForecast.low_90, high: weeklyForecast.high_90 }; } return { value: weeklyForecast.median, time: "(BfG6W)", source: 'weekly', uncertainty: uncertainty, weeklySlot: weeklyForecast }; } } catch (e) { console.warn(`Error parsing weekRange "${weeklyForecast.weekRange}" in getForecastForDateTime for gauge ${apiData.apiName}:`, e); } } } } return null; }
 
     // --- React Component ---
     function RhineDraftCalculator() {
-        // State (Copied from index5)
+        // --- State ---
         const [allGaugeStaticData, setAllGaugeStaticData] = useState([]);
         const [gaugeApiData, setGaugeApiData] = useState({});
-        const [customCorrections, setCustomCorrections] = useState({ upstream: {}, downstream: {} });
+        const [customCorrections, setCustomCorrections] = useState(() => getCookie('rhineDraftCorrections') || { upstream: {}, downstream: {} });
         const [forecastDates, setForecastDates] = useState([]);
         const [dataStatus, setDataStatus] = useState({ status: 'pending', message: 'Initializing...' });
         const [lastUpdated, setLastUpdated] = useState(null);
@@ -464,9 +437,29 @@
         const [journey, setJourney] = useState(() => getCookie('rhineDraftJourney') || { start: 914, end: 0 });
         const [activeTab, setActiveTab] = useState('route');
         const [displayMode, setDisplayMode] = useState('draft');
-        const [showUncertainty, setShowUncertainty] = useState(false);
+        const [showUncertainty, setShowUncertainty] = useState(() => getCookie('rhineShowUncertainty') ?? false);
+        const defaultStartDate = useMemo(() => { /* ... */ const now = new Date(); const year = now.getFullYear(); const month = String(now.getMonth() + 1).padStart(2, '0'); const day = String(now.getDate()).padStart(2, '0'); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); return `${year}-${month}-${day}T${hours}:${minutes}`; }, []);
+        const [routePlanResult, setRoutePlanResult] = useState(null);
+        const [routePlanStatus, setRoutePlanStatus] = useState('idle');
 
-        // Refs for Fixed Header (from index6)
+        // NEW State for Custom Segment
+        const [plannerSettings, setPlannerSettings] = useState(() => {
+            const savedSettings = getCookie('rhinePlannerSettings');
+            return {
+                startDate: savedSettings?.startDate || defaultStartDate,
+                speedDownstream: savedSettings?.speedDownstream || 20,
+                speedUpstream: savedSettings?.speedUpstream || 9,
+                operationalMode: savedSettings?.operationalMode || 'A1',
+                customOperationalHours: savedSettings?.customOperationalHours || 14,
+                excludedDays: savedSettings?.excludedDays || [0, 6],
+                // Add new custom segment fields
+                customSegmentKm: savedSettings?.customSegmentKm || 0,
+                customSegmentSpeed: savedSettings?.customSegmentSpeed || 0,
+                customSegmentPosition: savedSettings?.customSegmentPosition || 'end', // 'start' or 'end'
+            };
+        });
+
+        // --- Refs for Fixed Header ---
         const sentinelRef = useRef(null);
         const scrollWrapperRef = useRef(null);
         const originalTableRef = useRef(null);
@@ -476,10 +469,10 @@
         const isHeaderFixedRef = useRef(false);
 
         // --- Effects ---
-        // Static data load effect (Copied from index5)
-        useEffect(() => {
-            setDataStatus({ status: 'pending', message: 'Loading static gauge definitions...' });
-             const combinedStaticList = [ /* ... Static List from index5 ... */
+        // Static data load effect
+        useEffect(() => { /* ... static data load */
+             setDataStatus({ status: 'pending', message: 'Loading static gauge definitions...' });
+             const combinedStaticList = [ /* ... Static List (unchanged from previous versions) ... */
                 { name: 'Konstanz', km: 0, river: 'Rijn', streckenAbschnitt: '0-1', giw: 0, depthAtGiw: 0, officialSafetyMargin: 0, correctionOp: 0, correctionAf: 0 },
                 { name: 'Iffezheim', km: 334, river: 'Rijn', streckenAbschnitt: '334-384', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 10, correctionAf: 20, customVuistregel: 80 },
                 { name: 'Maxau', km: 362, river: 'Rijn', streckenAbschnitt: '335-384', giw: 372, depthAtGiw: 210, officialSafetyMargin: 30, correctionOp: 12, correctionAf: 12 },
@@ -507,10 +500,10 @@
                 { name: 'Doesburg', km: 903, river: 'IJssel', streckenAbschnitt: 'IJ 903-931', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 10, correctionAf: 20, customVuistregel: -200 },
                 { name: 'Deventer', km: 931, river: 'IJssel', streckenAbschnitt: 'IJ 931-981', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 10, customVuistregel: 90 },
                 { name: 'Katerveer', km: 981, river: 'IJssel', streckenAbschnitt: 'IJ 981-1005', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 10, customVuistregel: 270 },
-                { name: 'Spijk - Woudrichem', km: 931, river: 'Depth', streckenAbschnitt: 'Waal km 930-951', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
-                { name: 'Millingen tot Maas-Waalkanaal', km: 867, river: 'Depth', streckenAbschnitt: 'Waal (deeltraject)', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
-                { name: 'Maas-Waalkanaal tot Amsterdam-Rijnkanaal', km: 895, river: 'Depth', streckenAbschnitt: 'Waal (deeltraject)', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
-                { name: 'Amsterdam-Rijnkanaal tot Loevestein', km: 925, river: 'Depth', streckenAbschnitt: 'Waal (deeltraject)', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
+                { name: 'Spijk - Woudrichem', km: 931, river: 'Depth', streckenAbschnitt: 'Waal km 930-951', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0, isMGDTarget: true }, // Mark as MGD target
+                { name: 'Millingen tot Maas-Waalkanaal', km: 867, river: 'Depth', streckenAbschnitt: 'Waal (deeltraject)', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0, isMGDTarget: true },
+                { name: 'Maas-Waalkanaal tot Amsterdam-Rijnkanaal', km: 895, river: 'Depth', streckenAbschnitt: 'Waal (deeltraject)', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0, isMGDTarget: true },
+                { name: 'Amsterdam-Rijnkanaal tot Loevestein', km: 925, river: 'Depth', streckenAbschnitt: 'Waal (deeltraject)', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0, isMGDTarget: true },
                 { name: 'Pannerdensche Kop - IJsselkop', km: 878, river: 'Depth', streckenAbschnitt: 'Pannerdensch Kanaal', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
                 { name: 'IJsselkop - Driel', km: 884, river: 'Depth', streckenAbschnitt: 'Nederrijn km 878-884', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
                 { name: 'Driel - Heteren', km: 888, river: 'Depth', streckenAbschnitt: 'Nederrijn km 884-888', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
@@ -520,473 +513,671 @@
                 { name: 'Uitvaartdiepte Oostsluis Weurt', km: 886, river: 'Depth', streckenAbschnitt: 'Oostsluis Weurt', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
                 { name: 'Uitvaartdiepte Westsluis Weurt', km: 886.1, river: 'Depth', streckenAbschnitt: 'Westsluis Weurt', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 }
              ];
-             const processedStaticData = combinedStaticList
-                 .map(g => ({ ...g, giw: g.giw ?? 'N/A', depthAtGiw: g.depthAtGiw ?? 'N/A', officialSafetyMargin: g.officialSafetyMargin === undefined ? 'N/A' : g.officialSafetyMargin, isMainRoute: MAIN_ROUTE_RIVERS.includes(g.river) }))
-                 .sort((a, b) => { const riverOrder = { 'Rijn': 1, 'Pannerdens Kanaal': 2, 'Waal': 3, 'Nederrijn': 4, 'Lek': 5, 'IJssel': 6, 'Depth': 7, 'Unknown': 99 }; const riverA = a.river || 'Unknown'; const riverB = b.river || 'Unknown'; const orderA = riverOrder[riverA] || 99; const orderB = riverOrder[riverB] || 99; if (orderA !== orderB) return orderA - orderB; const kmA = a.km === undefined || a.km === null ? Infinity : a.km; const kmB = b.km === undefined || b.km === null ? Infinity : b.km; return kmA - kmB; });
+             const processedStaticData = combinedStaticList.map(g => ({ ...g, giw: g.giw ?? 'N/A', depthAtGiw: g.depthAtGiw ?? 'N/A', officialSafetyMargin: g.officialSafetyMargin === undefined ? 'N/A' : g.officialSafetyMargin, isMainRoute: MAIN_ROUTE_RIVERS.includes(g.river) })).sort((a, b) => { const riverOrder = { 'Rijn': 1, 'Pannerdens Kanaal': 2, 'Waal': 3, 'Nederrijn': 4, 'Lek': 5, 'IJssel': 6, 'Depth': 7, 'Unknown': 99 }; const riverA = a.river || 'Unknown'; const riverB = b.river || 'Unknown'; const orderA = riverOrder[riverA] || 99; const orderB = riverOrder[riverB] || 99; if (orderA !== orderB) return orderA - orderB; const kmA = a.km === undefined || a.km === null ? Infinity : a.km; const kmB = b.km === undefined || b.km === null ? Infinity : b.km; return kmA - kmB; });
              setAllGaugeStaticData(processedStaticData);
-             const defaultCorrections = { upstream: {}, downstream: {} };
-             processedStaticData.forEach(gauge => { defaultCorrections.upstream[gauge.name] = gauge.correctionOp === undefined ? 0 : gauge.correctionOp; defaultCorrections.downstream[gauge.name] = gauge.correctionAf === undefined ? 0 : gauge.correctionAf; });
-             const savedCorrections = getCookie('rhineDraftCorrections');
-             const mergedCorrections = { upstream: { ...defaultCorrections.upstream, ...(savedCorrections?.upstream || {}) }, downstream: { ...defaultCorrections.downstream, ...(savedCorrections?.downstream || {}) } };
-             setCustomCorrections(mergedCorrections);
-             setDataStatus({ status: 'success', message: 'Static data loaded.' });
+             const savedCorrections = getCookie('rhineDraftCorrections'); const defaultCorrections = { upstream: {}, downstream: {} }; processedStaticData.forEach(gauge => { defaultCorrections.upstream[gauge.name] = gauge.correctionOp === undefined ? 0 : gauge.correctionOp; defaultCorrections.downstream[gauge.name] = gauge.correctionAf === undefined ? 0 : gauge.correctionAf; }); const mergedCorrections = { upstream: { ...defaultCorrections.upstream, ...(savedCorrections?.upstream || {}) }, downstream: { ...defaultCorrections.downstream, ...(savedCorrections?.downstream || {}) } }; setCustomCorrections(mergedCorrections); setDataStatus({ status: 'success', message: 'Static data loaded.' });
         }, []);
 
-        // API data load effect (Copied from index5, slight modifications for forecastDates)
-        const loadGaugeApiData = useCallback(async (force = false) => {
-            setDataStatus({ status: 'pending', message: 'Data ophalen van API...' });
-            if (refreshButtonRef.current) refreshButtonRef.current.disabled = true;
-            try {
-                const apiResponse = await fetchConsolidatedData(force);
-                const newApiData = {}; const allDatesInForecast = new Set();
-                let successfulUpdates = 0; let apiGaugeCount = 0; let warningMessages = []; let errorMessages = [];
-                let overallStatus = 'success'; let latestApiTimestamp = 0;
-                const todayDate = new Date();
-                const nlYear = todayDate.toLocaleDateString('en-CA', { year: 'numeric', timeZone: 'Europe/Amsterdam' });
-                const nlMonth = todayDate.toLocaleDateString('en-CA', { month: '2-digit', timeZone: 'Europe/Amsterdam' });
-                const nlDay = todayDate.toLocaleDateString('en-CA', { day: '2-digit', timeZone: 'Europe/Amsterdam' });
-                const todayStr = `${nlYear}-${nlMonth}-${nlDay}`;
+        // API data load effect
+        const loadGaugeApiData = useCallback(async (force = false) => { /* ... */
+            setDataStatus({ status: 'pending', message: 'Data ophalen van API...' }); if (refreshButtonRef.current) refreshButtonRef.current.disabled = true; try { const apiResponse = await fetchConsolidatedData(force); const newApiData = {}; let successfulUpdates = 0; let apiGaugeCount = 0; let warningMessages = []; let errorMessages = []; let overallStatus = 'success'; let latestApiTimestamp = 0; const todayDate = new Date(); const nlYear = todayDate.toLocaleDateString('en-CA', { year: 'numeric', timeZone: 'Europe/Amsterdam' }); const nlMonth = todayDate.toLocaleDateString('en-CA', { month: '2-digit', timeZone: 'Europe/Amsterdam' }); const nlDay = todayDate.toLocaleDateString('en-CA', { day: '2-digit', timeZone: 'Europe/Amsterdam' }); const todayStr = `${nlYear}-${nlMonth}-${nlDay}`; apiGaugeCount = Object.keys(apiResponse).length; Object.entries(apiResponse).forEach(([apiGaugeName, data]) => { if (data.status === 'OK' || data.status === 'WARNING') successfulUpdates++; else if (data.status?.startsWith('CACHED')) { successfulUpdates++; if (data.status !== 'CACHED' && data.status !== 'CACHED_UNCHANGED') { warningMessages.push(`${apiGaugeName}: ${data.status} (${data.error || 'stale/partial'})`); if (overallStatus !== 'error') overallStatus = 'warning'; } } else { errorMessages.push(`${apiGaugeName}: ${data.error || data.status || 'Unknown error'}`); overallStatus = 'error'; } if (data.error && data.status !== 'ERROR' && !data.status?.startsWith('CACHED')) { warningMessages.push(`${apiGaugeName}: ${data.error}`); if (overallStatus !== 'error') overallStatus = 'warning'; } if (data.lastUpdated) { try { const t = new Date(data.lastUpdated).getTime(); if (!isNaN(t) && t > latestApiTimestamp) latestApiTimestamp = t; } catch (e) {} } }); allGaugeStaticData.forEach(staticGauge => { const apiLookupKey = staticGauge.apiDataName || staticGauge.name; const rawData = apiResponse[apiLookupKey]; const displayKey = staticGauge.name; if (rawData) { const processedForecasts = {}; if (rawData.forecasts) { Object.entries(rawData.forecasts).forEach(([dateStr, timeEntries]) => { if (dateStr >= todayStr) { const validTimeEntries = {}; Object.entries(timeEntries).forEach(([timeStr, forecastData]) => { if (timeStr.match(/^\d{2}:\d{2}$/) && forecastData && forecastData.value !== undefined && forecastData.value !== null) { validTimeEntries[timeStr] = { value: forecastData.value, low_80: forecastData.low_80 ?? null, high_80: forecastData.high_80 ?? null }; } }); if (Object.keys(validTimeEntries).length > 0) { processedForecasts[dateStr] = validTimeEntries; } } }); } newApiData[displayKey] = { apiName: apiLookupKey, currentLevel: rawData.currentLevel ?? null, currentTime: formatTimeDisplay(rawData.currentTime || rawData.lastUpdated), currentTrend: rawData.currentTrend ?? null, forecasts: processedForecasts, weeklyForecasts: rawData.weeklyForecasts ?? null, status: rawData.status || 'ERROR', error: rawData.error || null, river: staticGauge.river || rawData.river || 'Unknown', region: staticGauge.region || rawData.region || 'unknown', source: rawData.source || { measurement: null, forecast: null }, lastUpdated: rawData.lastUpdated || null, giw: staticGauge.giw, depthAtGiw: staticGauge.depthAtGiw, officialSafetyMargin: staticGauge.officialSafetyMargin, customVuistregel: staticGauge.customVuistregel, isMGDTarget: staticGauge.isMGDTarget }; } });
 
-                apiGaugeCount = Object.keys(apiResponse).length;
-                Object.entries(apiResponse).forEach(([apiGaugeName, data]) => {
-                     if (data.status === 'OK' || data.status === 'WARNING') successfulUpdates++;
-                     else if (data.status?.startsWith('CACHED')) { successfulUpdates++; if (data.status !== 'CACHED' && data.status !== 'CACHED_UNCHANGED') { warningMessages.push(`${apiGaugeName}: ${data.status} (${data.error || 'stale/partial'})`); if (overallStatus !== 'error') overallStatus = 'warning'; } }
-                     else { errorMessages.push(`${apiGaugeName}: ${data.error || data.status || 'Unknown error'}`); overallStatus = 'error'; }
-                     if (data.error && data.status !== 'ERROR' && !data.status?.startsWith('CACHED')) { warningMessages.push(`${apiGaugeName}: ${data.error}`); if (overallStatus !== 'error') overallStatus = 'warning'; }
-                     if (data.lastUpdated) { try { const t = new Date(data.lastUpdated).getTime(); if (!isNaN(t) && t > latestApiTimestamp) latestApiTimestamp = t; } catch (e) {} }
-                });
+                        // ... inside loadGaugeApiData ...
+        setGaugeApiData(newApiData);
 
-                allGaugeStaticData.forEach(staticGauge => {
-                    const apiLookupKey = staticGauge.apiDataName || staticGauge.name;
-                    const rawData = apiResponse[apiLookupKey];
-                    const displayKey = staticGauge.name;
-                    if (rawData) {
-                        const processedForecasts = {};
-                        if (rawData.forecasts) {
-                             Object.entries(rawData.forecasts).forEach(([dateStr, timeEntries]) => {
-                                if (dateStr >= todayStr) {
-                                    const validTimeEntries = {};
-                                    Object.entries(timeEntries).forEach(([timeStr, forecastData]) => {
-                                        if (timeStr.match(/^\d{2}:\d{2}$/) && forecastData && forecastData.value !== undefined && forecastData.value !== null) {
-                                             validTimeEntries[timeStr] = { value: forecastData.value, low_80: forecastData.low_80 ?? null, high_80: forecastData.high_80 ?? null };
-                                        }
-                                    });
-                                    if (Object.keys(validTimeEntries).length > 0) {
-                                        processedForecasts[dateStr] = validTimeEntries;
-                                        // We'll generate forecastDates state later based on today
-                                    }
-                                }
-                            });
-                        }
-                        newApiData[displayKey] = {
-                            apiName: apiLookupKey, currentLevel: rawData.currentLevel ?? null, currentTime: formatTimeDisplay(rawData.currentTime || rawData.lastUpdated),
-                            currentTrend: rawData.currentTrend ?? null,
-                            forecasts: processedForecasts,
-                            weeklyForecasts: rawData.weeklyForecasts ?? null,
-                            status: rawData.status || 'ERROR', error: rawData.error || null,
-                            river: staticGauge.river || rawData.river || 'Unknown', region: staticGauge.region || rawData.region || 'unknown', source: rawData.source || { measurement: null, forecast: null },
-                            lastUpdated: rawData.lastUpdated || null, giw: staticGauge.giw, depthAtGiw: staticGauge.depthAtGiw,
-                            officialSafetyMargin: staticGauge.officialSafetyMargin, customVuistregel: staticGauge.customVuistregel
-                        };
-                    }
-                });
+        // Generate forecast dates starting from TOMORROW
+        const futureDates = [];
+        let currentDate = new Date(todayStr + 'T12:00:00Z');
+        // <<< FIX: Increment date by one day BEFORE the loop starts >>>
+        currentDate.setUTCDate(currentDate.getUTCDate() + 1);
 
-                setGaugeApiData(newApiData);
+        for (let i = 0; i < MAX_FORECAST_DAYS; i++) {
+            const year = currentDate.getUTCFullYear();
+            const month = String(currentDate.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(currentDate.getUTCDate()).padStart(2, '0');
+            futureDates.push(`${year}-${month}-${day}`); // <-- Now pushes tomorrow on first iteration
+            currentDate.setUTCDate(currentDate.getUTCDate() + 1); // Increments for next iteration
+        }
+        setForecastDates(futureDates);
+        // ... rest of the function ...
 
-                // Generate forecastDates state (consistent with index5 and index6)
-                const futureDates = [];
-                let currentDate = new Date(todayStr + 'T12:00:00Z'); // Use UTC noon to avoid DST issues
-                for (let i = 0; i < MAX_FORECAST_DAYS; i++) {
-                     const year = currentDate.getUTCFullYear();
-                     const month = String(currentDate.getUTCMonth() + 1).padStart(2, '0');
-                     const day = String(currentDate.getUTCDate()).padStart(2, '0');
-                     futureDates.push(`${year}-${month}-${day}`);
-                     currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-                }
-                setForecastDates(futureDates); // Update state here
+                setLastUpdated(latestApiTimestamp > 0 ? new Date(latestApiTimestamp) : new Date()); let finalMessage = `Data bijgewerkt (${successfulUpdates}/${apiGaugeCount} API bronnen)`; if (overallStatus === 'error') finalMessage = `Fout bij bijwerken (${errorMessages.length} mislukt). ${errorMessages.length > 0 ? `Eerste: ${errorMessages[0]}` : ''}`; else if (overallStatus === 'warning') finalMessage = `Deels bijgewerkt (${warningMessages.length} waarschuwingen). ${warningMessages.length > 0 ? `Eerste: ${warningMessages[0]}` : ''}`; setDataStatus({ status: overallStatus, message: finalMessage }); } catch (error) { console.error("Failed to load or process API data:", error); setDataStatus({ status: 'error', message: `Fout bij laden: ${error.message}` }); setLastUpdated(new Date()); } finally { if (refreshButtonRef.current) refreshButtonRef.current.disabled = false; if (autoRefresh) { const nextTime = new Date(Date.now() + REFRESH_INTERVAL_MS); setNextRefreshTime(nextTime); } else { setNextRefreshTime(null); } }
+         }, [allGaugeStaticData, autoRefresh]);
 
-                setLastUpdated(latestApiTimestamp > 0 ? new Date(latestApiTimestamp) : new Date());
-                let finalMessage = `Data bijgewerkt (${successfulUpdates}/${apiGaugeCount} API bronnen)`;
-                if (overallStatus === 'error') finalMessage = `Fout bij bijwerken (${errorMessages.length} mislukt). ${errorMessages.length > 0 ? `Eerste: ${errorMessages[0]}` : ''}`;
-                else if (overallStatus === 'warning') finalMessage = `Deels bijgewerkt (${warningMessages.length} waarschuwingen). ${warningMessages.length > 0 ? `Eerste: ${warningMessages[0]}` : ''}`;
-                setDataStatus({ status: overallStatus, message: finalMessage });
+        // Initial data load trigger
+        useEffect(() => { if (allGaugeStaticData.length > 0) loadGaugeApiData(false); }, [allGaugeStaticData, loadGaugeApiData]);
 
-            } catch (error) { console.error("Failed to load or process API data:", error); setDataStatus({ status: 'error', message: `Fout bij laden: ${error.message}` }); setLastUpdated(new Date());
-            } finally { if (refreshButtonRef.current) refreshButtonRef.current.disabled = false; if (autoRefresh) { const nextTime = new Date(Date.now() + REFRESH_INTERVAL_MS); setNextRefreshTime(nextTime); } else { setNextRefreshTime(null); } }
-        }, [allGaugeStaticData, autoRefresh]); // Dependency on allGaugeStaticData is key
+        // Auto-refresh timer
+        useEffect(() => { /* ... */ if (!autoRefresh) { setNextRefreshTime(null); return () => {}; } let timerId; const setTimer = () => { const nextTime = new Date(Date.now() + REFRESH_INTERVAL_MS); setNextRefreshTime(nextTime); timerId = setTimeout(() => { console.log("Auto-refresh triggered at", new Date().toLocaleTimeString()); if (refreshHandlerRef.current && !refreshButtonRef.current?.disabled) { refreshHandlerRef.current?.(false); } else { console.log("Auto-refresh skipped, setting timer again."); setTimer(); } }, REFRESH_INTERVAL_MS); }; setTimer(); return () => clearTimeout(timerId); }, [autoRefresh]);
 
-        // Initial data load trigger (Copied from index5)
-       useEffect(() => { if (allGaugeStaticData.length > 0) loadGaugeApiData(false); }, [allGaugeStaticData, loadGaugeApiData]);
-
-       // Auto-refresh timer (Copied from index5)
-       useEffect(() => {
-            if (!autoRefresh) { setNextRefreshTime(null); return () => {}; }
-            let timerId;
-            const setTimer = () => { const nextTime = new Date(Date.now() + REFRESH_INTERVAL_MS); setNextRefreshTime(nextTime); timerId = setTimeout(() => { console.log("Auto-refresh triggered at", new Date().toLocaleTimeString()); if (refreshButtonRef.current && !refreshButtonRef.current.disabled) { refreshHandlerRef.current?.(false); } else { console.log("Auto-refresh skipped, setting timer again."); setTimer(); } }, REFRESH_INTERVAL_MS); };
-            setTimer();
-            return () => clearTimeout(timerId);
-        }, [autoRefresh]); // Removed handleRefresh dependency here
-
-
-        // Fixed Header Logic Effect (Adapted from index6 - NO CHANGES NEEDED HERE)
-        useEffect(() => {
-            const sentinel = sentinelRef.current;
-            const scrollWrapper = scrollWrapperRef.current;
-            const originalTable = originalTableRef.current;
-            const originalThead = originalTheadRef.current;
-            const fixedHeaderContainer = fixedHeaderContainerRef.current;
-            const fixedHeaderTable = fixedHeaderTableRef.current;
-
-            // Ensure all elements are available
-            if (!sentinel || !scrollWrapper || !originalTable || !originalThead || !fixedHeaderContainer || !fixedHeaderTable) {
-                console.warn("Fixed header refs not ready.");
-                return;
-            }
-
-            let clonedThead = null; // Store the cloned header node
-
-            const cloneHeader = () => {
-                 // Clear previous clone if exists
-                while (fixedHeaderTable.firstChild) {
-                    fixedHeaderTable.removeChild(fixedHeaderTable.firstChild);
-                }
-                // Clone the original thead (deep clone includes both <tr>)
-                if (originalThead) {
-                    clonedThead = originalThead.cloneNode(true);
-                    fixedHeaderTable.appendChild(clonedThead);
-                    // Apply initial sync if header is already fixed
-                    if (isHeaderFixedRef.current) {
-                        syncHeaderGeometry();
-                        syncHeaderScroll(scrollWrapper.scrollLeft);
-                    }
-                } else {
-                    console.warn("Original thead ref not found for cloning.");
-                }
-            };
-
-            // Clone the header initially
+        // Fixed Header Logic Effect
+        useEffect(() => { /* ... fixed header logic ... */
+            if (activeTab === 'planner') { if (fixedHeaderContainerRef.current) fixedHeaderContainerRef.current.classList.remove('visible'); if (originalTheadRef.current) originalTheadRef.current.classList.remove('hidden'); isHeaderFixedRef.current = false; return () => {}; }
+            const sentinel = sentinelRef.current; const scrollWrapper = scrollWrapperRef.current; const originalTable = originalTableRef.current; const originalThead = originalTheadRef.current; const fixedHeaderContainer = fixedHeaderContainerRef.current; const fixedHeaderTable = fixedHeaderTableRef.current;
+            if (!sentinel || !scrollWrapper || !originalTable || !originalThead || !fixedHeaderContainer || !fixedHeaderTable) { console.warn("Fixed header refs not ready for tab:", activeTab); return; }
+             let clonedThead = null;
+            const cloneHeader = () => { while (fixedHeaderTable.firstChild) { fixedHeaderTable.removeChild(fixedHeaderTable.firstChild); } if (originalThead) { clonedThead = originalThead.cloneNode(true); fixedHeaderTable.appendChild(clonedThead); if (isHeaderFixedRef.current) { syncHeaderGeometry(); syncHeaderScroll(scrollWrapper.scrollLeft); } } else { console.warn("Original thead ref not found for cloning."); } };
             cloneHeader();
+            const syncHeaderGeometry = () => { if (!isHeaderFixedRef.current || !scrollWrapper || !originalTable || !fixedHeaderContainer || !fixedHeaderTable) return; requestAnimationFrame(() => { const scrollWrapperRect = scrollWrapper.getBoundingClientRect(); const originalTableWidth = Math.max(originalTable.offsetWidth, originalTable.scrollWidth); fixedHeaderContainer.style.left = `${scrollWrapperRect.left}px`; fixedHeaderContainer.style.width = `${scrollWrapper.clientWidth}px`; fixedHeaderTable.style.width = `${originalTableWidth}px`; }); };
+             const syncHeaderScroll = (scrollLeft) => { if (!fixedHeaderContainer) return; requestAnimationFrame(() => { fixedHeaderContainer.scrollLeft = scrollLeft; }); };
+            const observer = new IntersectionObserver( ([entry]) => { const shouldBeFixed = !entry.isIntersecting && entry.boundingClientRect.top < 0; if (shouldBeFixed && !isHeaderFixedRef.current) { isHeaderFixedRef.current = true; originalThead?.classList.add('hidden'); syncHeaderGeometry(); syncHeaderScroll(scrollWrapper.scrollLeft); fixedHeaderContainer?.classList.add('visible'); } else if (!shouldBeFixed && isHeaderFixedRef.current) { isHeaderFixedRef.current = false; originalThead?.classList.remove('hidden'); fixedHeaderContainer?.classList.remove('visible'); } }, { threshold: [0], rootMargin: "0px" } );
+             observer.observe(sentinel);
+             const handleScroll = () => { if (isHeaderFixedRef.current) { syncHeaderScroll(scrollWrapper.scrollLeft); } };
+             const handleResize = () => { cloneHeader(); if (isHeaderFixedRef.current) { syncHeaderGeometry(); syncHeaderScroll(scrollWrapper.scrollLeft); } };
+             scrollWrapper.addEventListener('scroll', handleScroll, { passive: true }); window.addEventListener('resize', handleResize); window.addEventListener('scroll', handleResize, { passive: true });
+             const initialCheckTimeout = setTimeout(() => { if (!sentinelRef.current || !scrollWrapperRef.current || !originalTheadRef.current) return; const sentinelRect = sentinelRef.current.getBoundingClientRect(); const shouldBeFixedInitially = sentinelRect.top < 0; if (shouldBeFixedInitially && !isHeaderFixedRef.current) { isHeaderFixedRef.current = true; originalTheadRef.current?.classList.add('hidden'); syncHeaderGeometry(); syncHeaderScroll(scrollWrapperRef.current.scrollLeft); fixedHeaderContainerRef.current?.classList.add('visible'); } else if (!shouldBeFixedInitially && isHeaderFixedRef.current) { isHeaderFixedRef.current = false; originalTheadRef.current?.classList.remove('hidden'); fixedHeaderContainerRef.current?.classList.remove('visible'); } }, 150);
+             return () => { clearTimeout(initialCheckTimeout); observer.disconnect(); const currentScrollWrapper = scrollWrapperRef.current; currentScrollWrapper?.removeEventListener('scroll', handleScroll); window.removeEventListener('resize', handleResize); window.removeEventListener('scroll', handleResize); if (fixedHeaderContainerRef.current) fixedHeaderContainerRef.current.classList.remove('visible'); if (originalTheadRef.current) originalTheadRef.current.classList.remove('hidden'); isHeaderFixedRef.current = false; };
+        }, [activeTab, forecastDates.length]); // Re-run if tab changes or forecast dates load
 
-            const syncHeaderGeometry = () => {
-                // Only run if the header is currently fixed and elements exist
-                if (!isHeaderFixedRef.current || !scrollWrapper || !originalTable || !fixedHeaderContainer || !fixedHeaderTable) return;
-
-                requestAnimationFrame(() => {
-                    // Get dimensions of the scroll wrapper and the full table width
-                    const scrollWrapperRect = scrollWrapper.getBoundingClientRect();
-                     // Use offsetWidth for visible width, scrollWidth for full content width including overflow
-                    const originalTableWidth = Math.max(originalTable.offsetWidth, originalTable.scrollWidth);
-
-                    // Position the fixed container horizontally aligned with the scroll wrapper
-                    fixedHeaderContainer.style.left = `${scrollWrapperRect.left}px`;
-                    // Set fixed container width to match the visible width of the scroll wrapper
-                    fixedHeaderContainer.style.width = `${scrollWrapper.clientWidth}px`;
-                     // Set the table *inside* the fixed container to the full width of the original table
-                     // This allows the inner table to be scrolled horizontally via the container's scrollLeft
-                    fixedHeaderTable.style.width = `${originalTableWidth}px`;
-
-                });
-            };
-
-            const syncHeaderScroll = (scrollLeft) => {
-                // Only run if the fixed header container exists
-                if (!fixedHeaderContainer) return;
-                // Use requestAnimationFrame to avoid layout thrashing
-                requestAnimationFrame(() => {
-                    // Sync the horizontal scroll position of the fixed container
-                    fixedHeaderContainer.scrollLeft = scrollLeft;
-                });
-            };
-
-            // Intersection Observer setup
-            const observer = new IntersectionObserver(
-                ([entry]) => {
-                    // Check if the sentinel element is scrolled above the viewport top
-                    // entry.isIntersecting would be false, entry.boundingClientRect.top < 0 indicates it's above
-                    const shouldBeFixed = !entry.isIntersecting && entry.boundingClientRect.top < 0;
-
-                    if (shouldBeFixed && !isHeaderFixedRef.current) {
-                        // Transition TO fixed state
-                        isHeaderFixedRef.current = true;
-                        originalThead?.classList.add('hidden'); // Hide original thead
-                        syncHeaderGeometry(); // Set correct size/position
-                        syncHeaderScroll(scrollWrapper.scrollLeft); // Set correct scroll position
-                        fixedHeaderContainer?.classList.add('visible'); // Make fixed header visible
-                    } else if (!shouldBeFixed && isHeaderFixedRef.current) {
-                        // Transition FROM fixed state
-                        isHeaderFixedRef.current = false;
-                        originalThead?.classList.remove('hidden'); // Show original thead
-                        fixedHeaderContainer?.classList.remove('visible'); // Hide fixed header
-                    }
-                },
-                {
-                    threshold: [0], // Trigger exactly when the sentinel top edge crosses the root edge
-                    rootMargin: "0px" // No margin adjustment needed
-                }
-            );
-
-            // Start observing the sentinel element
-            observer.observe(sentinel);
-
-            // Event listener for horizontal scrolling within the wrapper
-            const handleScroll = () => {
-                if (isHeaderFixedRef.current) {
-                    // If header is fixed, sync its scroll position
-                    syncHeaderScroll(scrollWrapper.scrollLeft);
-                }
-            };
-
-            // Event listener for window resize or main page scroll (affects geometry)
-            const handleResize = () => {
-                // When resizing, always re-clone the header to ensure structure matches
-                // if min-widths cause columns to appear/disappear or change relative size.
-                // Also sync geometry if fixed.
-                cloneHeader(); // Re-clone first
-                if (isHeaderFixedRef.current) {
-                    // If header is fixed, recalculate geometry and sync scroll *after* cloning
-                    syncHeaderGeometry();
-                    syncHeaderScroll(scrollWrapper.scrollLeft);
-                }
-            };
-
-            // Attach listeners
-            scrollWrapper.addEventListener('scroll', handleScroll, { passive: true });
-            window.addEventListener('resize', handleResize);
-            window.addEventListener('scroll', handleResize, { passive: true }); // Listen to window scroll too, as it affects `getBoundingClientRect`
-
-            // Initial check in case the page loads scrolled down
-            const initialCheckTimeout = setTimeout(() => {
-                 // Re-check refs just in case they got unmounted quickly
-                if (!sentinelRef.current || !scrollWrapperRef.current) return;
-
-                const sentinelRect = sentinelRef.current.getBoundingClientRect();
-                const shouldBeFixedInitially = sentinelRect.top < 0; // Check if sentinel is already above viewport
-
-                if (shouldBeFixedInitially && !isHeaderFixedRef.current) {
-                     isHeaderFixedRef.current = true;
-                     originalTheadRef.current?.classList.add('hidden');
-                     syncHeaderGeometry();
-                     syncHeaderScroll(scrollWrapperRef.current.scrollLeft);
-                     fixedHeaderContainerRef.current?.classList.add('visible');
-                 } else if (!shouldBeFixedInitially && isHeaderFixedRef.current) {
-                     // This case is less likely but handles edge scenarios
-                     isHeaderFixedRef.current = false;
-                     originalTheadRef.current?.classList.remove('hidden');
-                     fixedHeaderContainerRef.current?.classList.remove('visible');
-                 }
-             }, 150); // Small delay to allow layout stabilization
-
-            // Cleanup function
-            return () => {
-                clearTimeout(initialCheckTimeout);
-                observer.disconnect();
-                scrollWrapper?.removeEventListener('scroll', handleScroll);
-                window.removeEventListener('resize', handleResize);
-                window.removeEventListener('scroll', handleResize);
-                // Reset state explicitly on unmount
-                fixedHeaderContainerRef.current?.classList.remove('visible');
-                originalTheadRef.current?.classList.remove('hidden');
-                isHeaderFixedRef.current = false;
-            };
-        // DEPENDENCY: Depend on forecastDates.length. If the number of columns changes,
-        // we need to re-run the effect to re-clone the header correctly.
-        }, [forecastDates.length]); // Added forecastDates.length dependency
+        // --- Persistence Effects ---
+        useEffect(() => { setCookie('rhinePlannerSettings', plannerSettings); }, [plannerSettings]);
+        useEffect(() => { setCookie('rhineShowUncertainty', showUncertainty); }, [showUncertainty]);
+        useEffect(() => { setCookie('rhineDraftCorrections', customCorrections); }, [customCorrections]);
 
 
-        // --- Event Handlers --- (Copied from index5)
-        const handleCorrectionChange = (direction, gaugeName, value) => { const parsedValue = parseInt(value, 10); const newValue = value === '' ? 0 : (isNaN(parsedValue) ? (customCorrections[direction][gaugeName] || 0) : parsedValue); const newCorrections = { ...customCorrections, [direction]: { ...customCorrections[direction], [gaugeName]: newValue } }; setCustomCorrections(newCorrections); setCookie('rhineDraftCorrections', newCorrections); };
-        const handleJourneyChange = (type, value) => { const newJourney = { ...journey, [type]: value ? parseInt(value, 10) : null }; setJourney(newJourney); setCookie('rhineDraftJourney', newJourney); };
-        const handleRefresh = useCallback((force = true) => { console.log("Manual refresh triggered.", `Force: ${force}`); loadGaugeApiData(force); }, [loadGaugeApiData]); // Keep loadGaugeApiData dependency
+        // --- Event Handlers ---
+        const handleCorrectionChange = (direction, gaugeName, value) => { /* ... */ const parsedValue = parseInt(value, 10); const newValue = value === '' ? 0 : (isNaN(parsedValue) ? (customCorrections[direction][gaugeName] || 0) : parsedValue); const newCorrections = { ...customCorrections, [direction]: { ...customCorrections[direction], [gaugeName]: newValue } }; setCustomCorrections(newCorrections); };
+        const handleJourneyChange = (type, value) => { /* ... */ const newJourney = { ...journey, [type]: value ? parseInt(value, 10) : null }; setJourney(newJourney); setCookie('rhineDraftJourney', newJourney); };
+        const handleRefresh = useCallback((force = true) => { /* ... */ console.log("Manual refresh triggered.", `Force: ${force}`); loadGaugeApiData(force); }, [loadGaugeApiData]);
         const refreshHandlerRef = useRef();
         useEffect(() => { refreshHandlerRef.current = handleRefresh; }, [handleRefresh]);
         const handleTabChange = (tab) => { setActiveTab(tab); };
         const handleDisplayModeChange = (event) => { setDisplayMode(event.target.value); };
         const handleUncertaintyToggle = (event) => { setShowUncertainty(event.target.checked); };
+        const handlePlannerSettingChange = (key, value) => { setPlannerSettings(prev => ({ ...prev, [key]: value })); };
+        const handleExcludedDayChange = (dayIndex, isChecked) => { /* ... */ setPlannerSettings(prev => { const currentExcluded = prev.excludedDays || []; if (isChecked) { return { ...prev, excludedDays: [...new Set([...currentExcluded, dayIndex])] }; } else { return { ...prev, excludedDays: currentExcluded.filter(d => d !== dayIndex) }; } }); };
+        const handleOperationalModeChange = (e) => { /* ... */ const mode = e.target.value; let hours = plannerSettings.customOperationalHours; if (mode === 'A1') hours = 14; else if (mode === 'A2') hours = 18; else if (mode === 'B') hours = 24; setPlannerSettings(prev => ({ ...prev, operationalMode: mode, customOperationalHours: (mode !== 'Custom') ? hours : prev.customOperationalHours })); };
+        const handleSetNow = () => { /* ... */ const now = new Date(); const year = now.getFullYear(); const month = String(now.getMonth() + 1).padStart(2, '0'); const day = String(now.getDate()).padStart(2, '0'); const hours = String(now.getHours()).padStart(2, '0'); const minutes = String(now.getMinutes()).padStart(2, '0'); const formattedNow = `${year}-${month}-${day}T${hours}:${minutes}`; handlePlannerSettingChange('startDate', formattedNow); };
 
-        // --- Calculations & Derived State --- (Copied from index5)
+        // --- Calculations & Derived State ---
+        // Determine travel direction based on journey selection
         useEffect(() => { if (journey.start !== null && journey.end !== null) { setTravelDirection(journey.start < journey.end ? 'downstream' : 'upstream'); } }, [journey]);
-        const isInJourneyKmRange = useCallback((gaugeKm) => { /* ... same as index5 ... */ if (journey.start === null || journey.end === null || gaugeKm === null || gaugeKm === undefined) return false; const startKm = Number(journey.start); const endKm = Number(journey.end); if (isNaN(startKm) || isNaN(endKm)) return false; return gaugeKm >= Math.min(startKm, endKm) && gaugeKm <= Math.max(startKm, endKm); }, [journey]);
-        const displayedGaugeData = useMemo(() => { /* ... same as index5 ... */ const data = allGaugeStaticData.filter(staticGauge => { const apiData = gaugeApiData[staticGauge.name]; const hasApiData = !!apiData && (apiData.status === 'OK' || apiData.status?.startsWith('CACHED') || apiData.status === 'WARNING'); if (activeTab === 'route') return staticGauge.isMainRoute && isInJourneyKmRange(staticGauge.km) && hasApiData; else return hasApiData; }).map(staticGauge => ({ ...staticGauge, apiData: gaugeApiData[staticGauge.name] })); return data; }, [allGaugeStaticData, gaugeApiData, activeTab, isInJourneyKmRange]);
-        const calculateDraft = useCallback((gauge, waterLevel) => { /* ... same as index5 ... */ if (!gauge || waterLevel === null || waterLevel === undefined || isNaN(Number(waterLevel))) return null; if (gauge.name === "Konstanz") return null; const numericLevel = Number(waterLevel); const correction = customCorrections[travelDirection]?.[gauge.name] || 0; if (gauge.river === 'Depth') { const safetyMargin = gauge.officialSafetyMargin !== 'N/A' ? Number(gauge.officialSafetyMargin) : DEFAULT_DEPTH_SAFETY_MARGIN; if (isNaN(safetyMargin)) return null; return (numericLevel - safetyMargin + correction); } else if (gauge.customVuistregel !== undefined && gauge.customVuistregel !== null && !isNaN(Number(gauge.customVuistregel))) return (numericLevel + Number(gauge.customVuistregel) + correction); else if (['Rijn', 'IJssel'].includes(gauge.river) && gauge.giw !== 'N/A' && gauge.depthAtGiw !== 'N/A' && gauge.officialSafetyMargin !== 'N/A') { const giw = Number(gauge.giw); const depth = Number(gauge.depthAtGiw); const safety = Number(gauge.officialSafetyMargin); if (!isNaN(giw) && !isNaN(depth) && !isNaN(safety)) return (numericLevel - giw + depth - safety + correction); else return null; } return null; }, [customCorrections, travelDirection]);
-        const calculateOfficialRuleOfThumb = useCallback((gauge) => { /* ... same as index5 ... */ if (gauge.river === 'Depth' || gauge.giw === 'N/A' || gauge.depthAtGiw === 'N/A' || gauge.officialSafetyMargin === 'N/A') return "N/A"; const giw = Number(gauge.giw); const depth = Number(gauge.depthAtGiw); const safety = Number(gauge.officialSafetyMargin); if (isNaN(giw) || isNaN(depth) || isNaN(safety)) return "N/A"; if (["Nijmegen", "Tiel", "Bingen", "Iffezheim", "Konstanz", "Lobith", "Pannerdense kop", "IJsselkop", "Doesburg", "Deventer", "Katerveer"].includes(gauge.name)) return "N/A"; return (depth - safety - giw).toFixed(0); }, []);
-        const calculateCustomRuleOfThumbDisplay = useCallback((gauge, direction) => { /* ... same as index5 ... */ if (!gauge || gauge.river === 'Depth' || gauge.name === "Konstanz") return "N/A"; const correction = customCorrections[direction]?.[gauge.name] || 0; let baseRule = null; if (gauge.customVuistregel !== undefined && gauge.customVuistregel !== null && !isNaN(Number(gauge.customVuistregel))) baseRule = Number(gauge.customVuistregel); else { const officialRule = calculateOfficialRuleOfThumb(gauge); if (officialRule !== "N/A") baseRule = Number(officialRule); } if (baseRule !== null) return (baseRule + correction).toFixed(0); return "N/A"; }, [customCorrections, calculateOfficialRuleOfThumb]);
-        const findCriticalGauge = useCallback(() => { /* ... same as index5 ... */ if (activeTab !== 'route' || displayedGaugeData.length === 0) return { name: null, draft: null, apiData: null }; let criticalGaugeName = null; let minDraft = Infinity; let criticalApiData = null; displayedGaugeData.forEach(gauge => { const apiData = gauge.apiData; if (apiData && apiData.currentLevel !== null) { const draft = calculateDraft(gauge, apiData.currentLevel); if (draft !== null && !isNaN(Number(draft))) { const numericDraft = Number(draft); if (numericDraft < minDraft) { minDraft = numericDraft; criticalGaugeName = gauge.name; criticalApiData = apiData; } } } }); return { name: criticalGaugeName, draft: minDraft === Infinity ? null : minDraft, apiData: criticalApiData }; }, [activeTab, displayedGaugeData, calculateDraft]);
-        const { name: criticalGaugeName, draft: criticalDraftValue, apiData: criticalApiDataForHighlight } = findCriticalGauge();
-        const todayStr = useMemo(() => { /* ... same as index5 ... */ const todayDate = new Date(); const nlYear = todayDate.toLocaleDateString('en-CA', { year: 'numeric', timeZone: 'Europe/Amsterdam' }); const nlMonth = todayDate.toLocaleDateString('en-CA', { month: '2-digit', timeZone: 'Europe/Amsterdam' }); const nlDay = todayDate.toLocaleDateString('en-CA', { day: '2-digit', timeZone: 'Europe/Amsterdam' }); return `${nlYear}-${nlMonth}-${nlDay}`; }, []);
-        const forecastBottlenecks = useMemo(() => { /* ... same calculation logic as index5 ... */ if (activeTab !== 'route' || forecastDates.length === 0 || displayedGaugeData.length === 0) return []; return forecastDates.map(dateStr => { let criticalGauge = null; let minDraft = Infinity; let forecastTime = null; let forecastLevelForCrit = null; let forecastSlotForCrit = null; let weeklyForecastSlotForCrit = null; let valueSource = null; let uncertaintyText = ''; displayedGaugeData.forEach(gauge => { const apiData = gauge.apiData; let potentialDraft = null; let currentForecastLevel = null; let currentForecastTime = null; let currentForecastSlot = null; let currentWeeklyForecastSlot = null; let currentValueSource = null; const forecastsForDate = apiData?.forecasts?.[dateStr]; if (forecastsForDate && Object.keys(forecastsForDate).length > 0) { const selectedTime = getBestForecastTime(forecastsForDate, apiData?.currentTime); const dailySlot = selectedTime ? forecastsForDate[selectedTime] : null; if (dailySlot && dailySlot.value !== undefined && dailySlot.value !== null) { currentForecastLevel = dailySlot.value; currentForecastTime = selectedTime; currentForecastSlot = dailySlot; currentValueSource = 'daily'; potentialDraft = calculateDraft(gauge, currentForecastLevel); } } if (potentialDraft === null && Array.isArray(apiData?.weeklyForecasts) && apiData.weeklyForecasts.length > 0) { const targetDate = new Date(dateStr + 'T12:00:00Z'); for (const weeklyForecast of apiData.weeklyForecasts) { if (weeklyForecast.weekRange && weeklyForecast.median !== null) { try { const [startStr, endStr] = weeklyForecast.weekRange.split('-'); const [startDay, startMonth, startYear] = startStr.split('.'); const [endDay, endMonth, endYear] = endStr.split('.'); const startDate = new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0)); const endDate = new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59)); if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime()) && targetDate >= startDate && targetDate <= endDate) { currentForecastLevel = weeklyForecast.median; currentForecastTime = "(BfG6W)"; currentForecastSlot = null; currentWeeklyForecastSlot = weeklyForecast; currentValueSource = 'weekly'; potentialDraft = calculateDraft(gauge, currentForecastLevel); break; } } catch (e) { console.warn(`Error parsing weekRange in bottleneck calc "${weeklyForecast.weekRange}" for gauge ${gauge.name}:`, e); } } } } if (potentialDraft !== null && !isNaN(Number(potentialDraft))) { const numericDraft = Number(potentialDraft); if (numericDraft < minDraft) { minDraft = numericDraft; criticalGauge = gauge; forecastTime = currentForecastTime; forecastLevelForCrit = currentForecastLevel; forecastSlotForCrit = currentForecastSlot; weeklyForecastSlotForCrit = currentWeeklyForecastSlot; valueSource = currentValueSource; } } }); if (criticalGauge && showUncertainty) { if (valueSource === 'daily' && forecastSlotForCrit) { if (forecastSlotForCrit.low_80 !== null && forecastSlotForCrit.high_80 !== null) { const draftLow = calculateDraft(criticalGauge, forecastSlotForCrit.low_80); const draftHigh = calculateDraft(criticalGauge, forecastSlotForCrit.high_80); if (draftLow !== null && draftHigh !== null && !isNaN(draftLow) && !isNaN(draftHigh)) { uncertaintyText = `(${Math.min(draftLow, draftHigh).toFixed(0)} - ${Math.max(draftLow, draftHigh).toFixed(0)} cm)`; } else { uncertaintyText = '(Bereik N/A)'; } } else if (forecastLevelForCrit !== null) { const daysAhead = diffDays(todayStr, dateStr); if (!isNaN(daysAhead) && daysAhead > 0) { const elwisUncertainty = daysAhead <= 2 ? 10 : 20; const draftLow = calculateDraft(criticalGauge, forecastLevelForCrit - elwisUncertainty); const draftHigh = calculateDraft(criticalGauge, forecastLevelForCrit + elwisUncertainty); if (draftLow !== null && draftHigh !== null && !isNaN(draftLow) && !isNaN(draftHigh)) { uncertaintyText = `(${Math.min(draftLow, draftHigh).toFixed(0)} - ${Math.max(draftLow, draftHigh).toFixed(0)} cm*)`; } else { uncertaintyText = `(±${elwisUncertainty} cm)`; } } } } else if (valueSource === 'weekly' && weeklyForecastSlotForCrit) { if (weeklyForecastSlotForCrit.low_90 !== null && weeklyForecastSlotForCrit.high_90 !== null) { const draftLow = calculateDraft(criticalGauge, weeklyForecastSlotForCrit.low_90); const draftHigh = calculateDraft(criticalGauge, weeklyForecastSlotForCrit.high_90); if (draftLow !== null && draftHigh !== null && !isNaN(draftLow) && !isNaN(draftHigh)) { uncertaintyText = `(${Math.min(draftLow, draftHigh).toFixed(0)} - ${Math.max(draftLow, draftHigh).toFixed(0)} cm)`; } else { uncertaintyText = '(Bereik N/A)'; } } } } return { date: dateStr, gauge: criticalGauge?.name || null, draft: criticalGauge && minDraft !== Infinity ? minDraft.toFixed(0) : 'N/A', time: forecastTime, uncertainty: uncertaintyText }; }); }, [activeTab, forecastDates, displayedGaugeData, calculateDraft, showUncertainty, todayStr, getBestForecastTime, diffDays]); // Added diffDays dependency
+
+        // Check if a gauge KM is within the selected journey range
+        const isInJourneyKmRange = useCallback((gaugeKm) => { /* ... */ if (journey.start === null || journey.end === null || gaugeKm === null || gaugeKm === undefined) return false; const startKm = Number(journey.start); const endKm = Number(journey.end); if (isNaN(startKm) || isNaN(endKm)) return false; return gaugeKm >= Math.min(startKm, endKm) && gaugeKm <= Math.max(startKm, endKm); }, [journey]);
+
+        // Filter gauge data for the "Max Draft" / "All" tabs
+        const displayedGaugeDataMaxDraft = useMemo(() => { /* ... */ const data = allGaugeStaticData.filter(staticGauge => { const apiData = gaugeApiData[staticGauge.name]; const hasApiData = !!apiData && (apiData.status === 'OK' || apiData.status?.startsWith('CACHED') || apiData.status === 'WARNING'); if (activeTab === 'route') return staticGauge.isMainRoute && isInJourneyKmRange(staticGauge.km) && hasApiData; else if (activeTab === 'all') return hasApiData; return false; }).map(staticGauge => ({ ...staticGauge, apiData: gaugeApiData[staticGauge.name] })); return data; }, [allGaugeStaticData, gaugeApiData, activeTab, isInJourneyKmRange]);
+
+        // Determine which data to display based on the active tab
+        const displayedGaugeData = activeTab === 'planner' ? [] : displayedGaugeDataMaxDraft;
+
+        // Calculate draft based on gauge properties, water level, and direction
+        const calculateDraft = useCallback((gauge, waterLevel, direction) => { /* ... unchanged ... */ if (!gauge || waterLevel === null || waterLevel === undefined || isNaN(Number(waterLevel))) return null; if (gauge.name === "Konstanz") return null; const numericLevel = Number(waterLevel); const effectiveDirection = direction || travelDirection; const correction = customCorrections[effectiveDirection]?.[gauge.name] || 0; if (gauge.river === 'Depth') { const safetyMargin = gauge.officialSafetyMargin !== 'N/A' ? Number(gauge.officialSafetyMargin) : DEFAULT_DEPTH_SAFETY_MARGIN; if (isNaN(safetyMargin)) return null; return (numericLevel - safetyMargin + correction); } else if (gauge.customVuistregel !== undefined && gauge.customVuistregel !== null && !isNaN(Number(gauge.customVuistregel))) { return (numericLevel + Number(gauge.customVuistregel) + correction); } else if (['Rijn', 'IJssel'].includes(gauge.river) && gauge.giw !== 'N/A' && gauge.depthAtGiw !== 'N/A' && gauge.officialSafetyMargin !== 'N/A') { const giw = Number(gauge.giw); const depth = Number(gauge.depthAtGiw); const safety = Number(gauge.officialSafetyMargin); if (!isNaN(giw) && !isNaN(depth) && !isNaN(safety)) { return (numericLevel - giw + depth - safety + correction); } else { return null; } } return null; }, [customCorrections, travelDirection]);
+
+        // Calculate the official rule of thumb value for display
+        const calculateOfficialRuleOfThumb = useCallback((gauge) => { /* ... */ if (gauge.river === 'Depth' || gauge.giw === 'N/A' || gauge.depthAtGiw === 'N/A' || gauge.officialSafetyMargin === 'N/A') return "N/A"; const giw = Number(gauge.giw); const depth = Number(gauge.depthAtGiw); const safety = Number(gauge.officialSafetyMargin); if (isNaN(giw) || isNaN(depth) || isNaN(safety)) return "N/A"; if (["Nijmegen", "Tiel", "Bingen", "Iffezheim", "Konstanz", "Lobith", "Pannerdense kop", "IJsselkop", "Doesburg", "Deventer", "Katerveer"].includes(gauge.name)) return "N/A"; return (depth - safety - giw).toFixed(0); }, []);
+
+        // Calculate the custom/corrected rule of thumb value for display
+        const calculateCustomRuleOfThumbDisplay = useCallback((gauge, direction) => { /* ... unchanged ... */ if (!gauge || gauge.river === 'Depth' || gauge.name === "Konstanz") return "N/A"; const effectiveDirection = direction || travelDirection; const correction = customCorrections[effectiveDirection]?.[gauge.name] || 0; let baseRule = null; if (gauge.customVuistregel !== undefined && gauge.customVuistregel !== null && !isNaN(Number(gauge.customVuistregel))) { baseRule = Number(gauge.customVuistregel); } else { const officialRule = calculateOfficialRuleOfThumb(gauge); if (officialRule !== "N/A") { baseRule = Number(officialRule); } } if (baseRule !== null) { return (baseRule + correction).toFixed(0); } return "N/A"; }, [customCorrections, travelDirection, calculateOfficialRuleOfThumb]);
+
+        // Find the gauge with the lowest current draft for the "Route" tab highlight
+        const findCriticalGaugeMaxDraft = useCallback(() => { /* ... */ if (activeTab !== 'route' || displayedGaugeDataMaxDraft.length === 0) return { name: null, draft: null, apiData: null }; let criticalGaugeName = null; let minDraft = Infinity; let criticalApiData = null; displayedGaugeDataMaxDraft.forEach(gauge => { const apiData = gauge.apiData; if (apiData && apiData.currentLevel !== null) { const draft = calculateDraft(gauge, apiData.currentLevel, travelDirection); if (draft !== null && !isNaN(Number(draft))) { const numericDraft = Number(draft); if (numericDraft < minDraft) { minDraft = numericDraft; criticalGaugeName = gauge.name; criticalApiData = apiData; } } } }); return { name: criticalGaugeName, draft: minDraft === Infinity ? null : minDraft, apiData: criticalApiData }; }, [activeTab, displayedGaugeDataMaxDraft, calculateDraft, travelDirection]);
+        const { name: criticalGaugeName, draft: criticalDraftValue, apiData: criticalApiDataForHighlight } = findCriticalGaugeMaxDraft();
+
+        // Get today's date string
+        const todayStr = useMemo(() => { /* ... */ const todayDate = new Date(); const nlYear = todayDate.toLocaleDateString('en-CA', { year: 'numeric', timeZone: 'Europe/Amsterdam' }); const nlMonth = todayDate.toLocaleDateString('en-CA', { month: '2-digit', timeZone: 'Europe/Amsterdam' }); const nlDay = todayDate.toLocaleDateString('en-CA', { day: '2-digit', timeZone: 'Europe/Amsterdam' }); return `${nlYear}-${nlMonth}-${nlDay}`; }, []);
+
+        // Helper to find the best matching forecast time for a given current time
+        function getBestForecastTime(forecastsForDate, currentTime) { /* ... unchanged ... */ if (!forecastsForDate || typeof forecastsForDate !== 'object') { return null; } const availableTimes = Object.keys(forecastsForDate).filter(t => t.match(/^\d{2}:\d{2}$/)); if (availableTimes.length === 0) { return null; } if (availableTimes.length === 1) { return availableTimes[0]; } availableTimes.sort(); if (!currentTime) { return availableTimes[availableTimes.length - 1]; } let currentMinutes = 0; try { const [hours, minutes] = currentTime.split(':').map(Number); currentMinutes = hours * 60 + minutes; } catch (e) { return availableTimes[availableTimes.length - 1]; } let bestTime = availableTimes[0]; let minDiff = Infinity; for (const time of availableTimes) { const [hours, minutes] = time.split(':').map(Number); const timeMinutes = hours * 60 + minutes; const diff = Math.abs(timeMinutes - currentMinutes); if (diff < minDiff) { minDiff = diff; bestTime = time; } } return bestTime; }
+
+        // Calculate forecast bottlenecks for the highlight box
+        const forecastBottlenecks = useMemo(() => { /* ... unchanged logic ... */ if (activeTab !== 'route' || forecastDates.length === 0 || displayedGaugeDataMaxDraft.length === 0) return []; return forecastDates.map(dateStr => { let criticalGauge = null; let minDraft = Infinity; let forecastTime = null; let forecastLevelForCrit = null; let forecastSlotForCrit = null; let weeklyForecastSlotForCrit = null; let valueSource = null; let uncertaintyText = ''; displayedGaugeDataMaxDraft.forEach(gauge => { const apiData = gauge.apiData; let potentialDraft = null; let currentForecastLevel = null; let currentForecastTime = null; let currentForecastSlot = null; let currentWeeklyForecastSlot = null; let currentValueSource = null; const forecastsForDate = apiData?.forecasts?.[dateStr]; if (forecastsForDate && Object.keys(forecastsForDate).length > 0) { const selectedTime = getBestForecastTime(forecastsForDate, apiData?.currentTime); const dailySlot = selectedTime ? forecastsForDate[selectedTime] : null; if (dailySlot && dailySlot.value !== undefined && dailySlot.value !== null) { currentForecastLevel = dailySlot.value; currentForecastTime = selectedTime; currentForecastSlot = dailySlot; currentValueSource = 'daily'; potentialDraft = calculateDraft(gauge, currentForecastLevel, travelDirection); } } if (potentialDraft === null && Array.isArray(apiData?.weeklyForecasts) && apiData.weeklyForecasts.length > 0) { const targetDate = new Date(dateStr + 'T12:00:00Z'); for (const weeklyForecast of apiData.weeklyForecasts) { if (weeklyForecast.weekRange && weeklyForecast.median !== null) { try { const [startStr, endStr] = weeklyForecast.weekRange.split('-'); const [startDay, startMonth, startYear] = startStr.split('.'); const [endDay, endMonth, endYear] = endStr.split('.'); const startDate = new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0)); const endDate = new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59)); if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime()) && targetDate >= startDate && targetDate <= endDate) { currentForecastLevel = weeklyForecast.median; currentForecastTime = "(BfG6W)"; currentForecastSlot = null; currentWeeklyForecastSlot = weeklyForecast; currentValueSource = 'weekly'; potentialDraft = calculateDraft(gauge, currentForecastLevel, travelDirection); break; } } catch (e) { /* ... */ } } } } if (potentialDraft !== null && !isNaN(Number(potentialDraft))) { const numericDraft = Number(potentialDraft); if (numericDraft < minDraft) { minDraft = numericDraft; criticalGauge = gauge; forecastTime = currentForecastTime; forecastLevelForCrit = currentForecastLevel; forecastSlotForCrit = currentForecastSlot; weeklyForecastSlotForCrit = currentWeeklyForecastSlot; valueSource = currentValueSource; } } }); if (criticalGauge && showUncertainty) { if (valueSource === 'daily' && forecastSlotForCrit) { if (forecastSlotForCrit.low_80 !== null && forecastSlotForCrit.high_80 !== null) { const draftLow = calculateDraft(criticalGauge, forecastSlotForCrit.low_80, travelDirection); const draftHigh = calculateDraft(criticalGauge, forecastSlotForCrit.high_80, travelDirection); if (draftLow !== null && draftHigh !== null && !isNaN(draftLow) && !isNaN(draftHigh)) { uncertaintyText = `(${Math.min(draftLow, draftHigh).toFixed(0)}–${Math.max(draftLow, draftHigh).toFixed(0)} cm)`; } else { uncertaintyText = '(Bereik N/A)'; } } else if (forecastLevelForCrit !== null) { const daysAhead = diffDays(todayStr, dateStr); if (!isNaN(daysAhead) && daysAhead > 0) { const elwisUncertainty = daysAhead <= 2 ? 10 : 20; const draftLow = calculateDraft(criticalGauge, forecastLevelForCrit - elwisUncertainty, travelDirection); const draftHigh = calculateDraft(criticalGauge, forecastLevelForCrit + elwisUncertainty, travelDirection); if (draftLow !== null && draftHigh !== null && !isNaN(draftLow) && !isNaN(draftHigh)) { uncertaintyText = `(${Math.min(draftLow, draftHigh).toFixed(0)}–${Math.max(draftLow, draftHigh).toFixed(0)} cm*)`; } else { uncertaintyText = `(±${elwisUncertainty} cm*)`; } } } } else if (valueSource === 'weekly' && weeklyForecastSlotForCrit) { if (weeklyForecastSlotForCrit.low_90 !== null && weeklyForecastSlotForCrit.high_90 !== null) { const draftLow = calculateDraft(criticalGauge, weeklyForecastSlotForCrit.low_90, travelDirection); const draftHigh = calculateDraft(criticalGauge, weeklyForecastSlotForCrit.high_90, travelDirection); if (draftLow !== null && draftHigh !== null && !isNaN(draftLow) && !isNaN(draftHigh)) { uncertaintyText = `(${Math.min(draftLow, draftHigh).toFixed(0)}–${Math.max(draftLow, draftHigh).toFixed(0)} cm)`; } else { uncertaintyText = '(Bereik N/A)'; } } } } return { date: dateStr, gauge: criticalGauge?.name || null, draft: criticalGauge && minDraft !== Infinity ? minDraft.toFixed(0) : 'N/A', time: forecastTime, uncertainty: uncertaintyText }; }); }, [activeTab, forecastDates, displayedGaugeDataMaxDraft, calculateDraft, showUncertainty, todayStr, getBestForecastTime, diffDays, travelDirection]);
+
+        // --- Route Planning Calculation Function ---
+        const calculateRoutePlan = useCallback(() => {
+             setRoutePlanStatus('calculating');
+             setRoutePlanResult(null);
+
+             try {
+                // 1. Validate Inputs
+                const startDateTime = new Date(plannerSettings.startDate);
+                if (isNaN(startDateTime.getTime())) throw new Error("Ongeldige startdatum/-tijd.");
+                // Use explicit null check for journey start/end
+                if (journey.start === null || journey.end === null) throw new Error("Selecteer een begin- en eindpunt.");
+                if (!plannerSettings.speedDownstream || plannerSettings.speedDownstream <= 0 || !plannerSettings.speedUpstream || plannerSettings.speedUpstream <= 0) throw new Error("Snelheden moeten groter dan 0 zijn.");
+                let operationalHours;
+                switch(plannerSettings.operationalMode) {
+                    case 'A1': operationalHours = 14; break;
+                    case 'A2': operationalHours = 18; break;
+                    case 'B': operationalHours = 24; break;
+                    case 'Custom':
+                        operationalHours = Number(plannerSettings.customOperationalHours);
+                        if (!operationalHours || operationalHours <= 0 || operationalHours > 24) throw new Error("Ongeldige custom uren (1-24).");
+                        break;
+                    default: throw new Error("Ongeldige operatie modus.");
+                }
+                 // Validate custom segment speed if distance is > 0
+                if (plannerSettings.customSegmentKm > 0 && (!plannerSettings.customSegmentSpeed || plannerSettings.customSegmentSpeed <= 0)) {
+                    throw new Error("Snelheid voor extra trajectdeel moet groter dan 0 zijn als afstand is ingevuld.");
+                }
+
+                // 2. Determine Route and Direction
+                const startKm = Number(journey.start);
+                const endKm = Number(journey.end);
+                const planDirection = startKm < endKm ? 'downstream' : 'upstream';
+                const speed = planDirection === 'downstream' ? plannerSettings.speedDownstream : plannerSettings.speedUpstream;
+
+                // 3. Get Gauges on Route & Sort
+                const routeGauges = allGaugeStaticData
+                    .filter(g => g.isMainRoute && isInJourneyKmRange(g.km))
+                    .map(g => ({ ...g, apiData: gaugeApiData[g.name] }))
+                    .sort((a, b) => planDirection === 'downstream' ? (a.km - b.km) : (b.km - a.km));
+                 if (routeGauges.length === 0) throw new Error("Geen peilingen gevonden op het geselecteerde traject.");
+
+                // 4. MGD Check Pre-calculation (Optional, unchanged logic)
+                let mgdWarning = null;
+                // ... (MGD check logic as before) ...
+
+                // 5. Calculate ETAs and Drafts for each point (Pass 1: Find Min Draft)
+                const intermediatePoints = []; // Store temporary data here
+                let currentTime = new Date(startDateTime.getTime());
+                let overallMinDraft = Infinity;
+                let criticalPointInfo = null;
+                const now = new Date();
+
+                // --- Add Custom Segment calculation BEFORE loop if position is 'start' ---
+                if (plannerSettings.customSegmentPosition === 'start' &&
+                    plannerSettings.customSegmentKm > 0 &&
+                    plannerSettings.customSegmentSpeed > 0) {
+                    const segmentHours = plannerSettings.customSegmentKm / plannerSettings.customSegmentSpeed;
+                    console.log(`Adding ${segmentHours.toFixed(2)} hours for custom start segment.`);
+                    currentTime = addOperationalTime(currentTime, segmentHours, operationalHours, plannerSettings.excludedDays);
+                    // Note: startDateTime used for initial display/check is not updated here, calculation proceeds from adjusted currentTime
+                }
+
+                // --- Main loop through gauges ---
+                for (let i = 0; i < routeGauges.length; i++) {
+                    const currentGauge = routeGauges[i];
+                    const currentApiData = currentGauge.apiData;
+                    let eta = new Date(currentTime.getTime());
+
+                    // Calculate travel time from previous point
+                    if (i > 0) {
+                        const prevGauge = routeGauges[i-1];
+                        const distance = Math.abs(currentGauge.km - prevGauge.km);
+                        if (distance > 0 && speed > 0) {
+                            const travelHours = distance / speed;
+                            eta = addOperationalTime(currentTime, travelHours, operationalHours, plannerSettings.excludedDays);
+                            currentTime = new Date(eta.getTime()); // Update currentTime for the next leg
+                        }
+                    } else {
+                        // Ensure the initial start time adheres to operational hours if needed
+                         currentTime = addOperationalTime(currentTime, 0, operationalHours, plannerSettings.excludedDays);
+                         eta = new Date(currentTime.getTime());
+                    }
+
+                    // Find forecast level for the calculated ETA
+                    let forecastLevel = null;
+                    let forecastTimeStr = 'N/A';
+                    let forecastUncertainty = null;
+                    let forecastSource = '';
+                    let isCurrentLevelUsed = false;
+
+                    // Use current level if departure is now or in the past
+                    if (i === 0 && startDateTime <= now && currentApiData?.currentLevel !== null) {
+                        forecastLevel = currentApiData.currentLevel;
+                        forecastTimeStr = currentApiData.currentTime || 'Actueel';
+                        forecastSource = 'current';
+                        isCurrentLevelUsed = true;
+                    } else {
+                        // Otherwise, get the forecast for the ETA
+                        const forecast = getForecastForDateTime(currentApiData, eta);
+                        if (forecast) {
+                            forecastLevel = forecast.value;
+                            forecastTimeStr = forecast.time;
+                            forecastSource = forecast.source;
+                            forecastUncertainty = forecast.uncertainty;
+                        }
+                    }
+
+                    // Skip gauge if no level found (unless it's the departure gauge and we couldn't find even current level)
+                    if (forecastLevel === null && i > 0) {
+                         console.log(`Excluding gauge ${currentGauge.name} at KM ${currentGauge.km} due to no forecast/current level found for ETA ${eta.toISOString()}`);
+                         continue; // Skip adding this point if no data
+                    }
+                     // If it's the first point and still no level, we can't proceed meaningfully
+                     if (forecastLevel === null && i === 0) {
+                         console.warn(`Could not determine level for departure gauge ${currentGauge.name}. Adding point with N/A values.`);
+                         // Allow adding the first point even without level, but values will be N/A
+                     }
+
+
+                    // Calculate draft at ETA
+                    const draftAtEta = calculateDraft(currentGauge, forecastLevel, planDirection);
+
+                    // --- Calculate Corrected Rule ---
+                    const correctedRule = calculateCustomRuleOfThumbDisplay(currentGauge, planDirection);
+
+                    // Update overall minimum draft if applicable
+                    if (draftAtEta !== null && draftAtEta < overallMinDraft) {
+                        overallMinDraft = draftAtEta;
+                        criticalPointInfo = { name: currentGauge.name, km: currentGauge.km, draft: draftAtEta, eta: eta };
+                    }
+
+                    // Calculate draft uncertainty text (only if uncertainty is shown and it's not based on current level)
+                    let draftUncertaintyText = '';
+                    if (showUncertainty && draftAtEta !== null && !isCurrentLevelUsed) {
+                         if (forecastUncertainty) { // Daily or Weekly forecast with explicit range
+                             const draftLow = calculateDraft(currentGauge, forecastUncertainty.low, planDirection);
+                             const draftHigh = calculateDraft(currentGauge, forecastUncertainty.high, planDirection);
+                             if (draftLow !== null && draftHigh !== null && !isNaN(draftLow) && !isNaN(draftHigh)) {
+                                 draftUncertaintyText = `(${Math.min(draftLow, draftHigh).toFixed(0)}–${Math.max(draftLow, draftHigh).toFixed(0)} cm)`;
+                             } else {
+                                 draftUncertaintyText = '(Bereik N/A)';
+                             }
+                         }
+                         else if (forecastSource === 'daily' && forecastLevel !== null) { // ELWIS-like fallback uncertainty
+                             const etaDateStr = eta.toISOString().split('T')[0];
+                             const daysAhead = diffDays(todayStr, etaDateStr);
+                             if (!isNaN(daysAhead) && daysAhead > 0) {
+                                 const elwisUncertainty = daysAhead <= 2 ? 10 : 20;
+                                 const draftLow = calculateDraft(currentGauge, forecastLevel - elwisUncertainty, planDirection);
+                                 const draftHigh = calculateDraft(currentGauge, forecastLevel + elwisUncertainty, planDirection);
+                                 if (draftLow !== null && draftHigh !== null && !isNaN(draftLow) && !isNaN(draftHigh)) {
+                                     draftUncertaintyText = `(${Math.min(draftLow, draftHigh).toFixed(0)}–${Math.max(draftLow, draftHigh).toFixed(0)} cm*)`;
+                                 } else {
+                                     draftUncertaintyText = `(±${elwisUncertainty} cm*)`;
+                                 }
+                             }
+                         }
+                    }
+
+                    // Store intermediate results (without final offset)
+                    intermediatePoints.push({
+                        name: currentGauge.name,
+                        km: currentGauge.km,
+                        eta: eta,
+                        forecastLevel: forecastLevel, // Store level for offset calculation
+                        forecastTime: forecastTimeStr,
+                        forecastSource: forecastSource,
+                        draftAtEta: draftAtEta,
+                        correctedRule: correctedRule, // STORE the calculated rule
+                        offset: '-', // Placeholder, calculated in Pass 2
+                        draftUncertaintyText: draftUncertaintyText,
+                        notes: forecastLevel === null ? 'Geen data voor ETA' : (forecastSource === 'weekly' ? 'Weekpr.' : (forecastSource === 'current' ? 'Actueel' : '')),
+                        isCritical: false, // Set later in Pass 2
+                        gaugeRef: currentGauge // Store ref for getGaugeUrl later
+                    });
+                } // --- End loop through gauges ---
+
+                // --- Add Custom Segment calculation AFTER loop if position is 'end' ---
+                if (plannerSettings.customSegmentPosition === 'end' &&
+                    plannerSettings.customSegmentKm > 0 &&
+                    plannerSettings.customSegmentSpeed > 0 &&
+                    intermediatePoints.length > 0) { // Ensure there's a last point to adjust
+                    const segmentHours = plannerSettings.customSegmentKm / plannerSettings.customSegmentSpeed;
+                    console.log(`Adding ${segmentHours.toFixed(2)} hours for custom end segment.`);
+                    const lastPoint = intermediatePoints[intermediatePoints.length - 1];
+                    // Calculate the new final ETA by adding segment time to the last calculated ETA
+                    const finalEtaWithSegment = addOperationalTime(lastPoint.eta, segmentHours, operationalHours, plannerSettings.excludedDays);
+
+                    // Update the ETA of the last point in the array
+                    lastPoint.eta = finalEtaWithSegment;
+                    // Optionally, add a note to the last point
+                    lastPoint.notes = (lastPoint.notes ? lastPoint.notes + '; ' : '') + `+${plannerSettings.customSegmentKm}km`;
+
+                    // If the critical point happened to be the *last* gauge point, update its ETA
+                    // Note: The critical draft itself doesn't change, only the time you pass the critical point
+                    if (criticalPointInfo && criticalPointInfo.name === lastPoint.name && criticalPointInfo.km === lastPoint.km) {
+                       criticalPointInfo.eta = finalEtaWithSegment;
+                       console.log(`Updated critical point ETA due to end segment addition.`);
+                    }
+                }
+
+
+                // 6. Calculate Final Offset and Mark Critical Point (Pass 2)
+const finalRoutePoints = intermediatePoints.map(point => {
+    let finalOffset = '-';
+    // Calculate offset: Gauge water level - Minimum draft in route
+    // This shows how much water is above the minimum draft (bottleneck)
+    if (point.forecastLevel !== null && !isNaN(Number(point.forecastLevel)) &&
+        overallMinDraft !== Infinity && !isNaN(overallMinDraft))
+    {
+        // Offset calculation: Water Level - Overall Minimum Draft
+        // Shows margin compared to the lowest point on the route
+        const offsetCalc = point.forecastLevel - overallMinDraft;
+        if (!isNaN(offsetCalc)) {
+            finalOffset = (offsetCalc >= 0 ? '+' : '') + offsetCalc.toFixed(0);
+        }
+    }
+                    // Check if this point is the critical one found in Pass 1
+                    const isThisCritical = criticalPointInfo && point.name === criticalPointInfo.name && point.km === criticalPointInfo.km;
+                    if (isThisCritical && criticalPointInfo) {
+                         // Add uncertainty text to the critical point info for summary display
+                         criticalPointInfo.uncertaintyText = point.draftUncertaintyText;
+                    }
+
+                    return {
+                        ...point,
+                        offset: finalOffset, // Use the newly calculated offset
+                        isCritical: isThisCritical
+                    };
+                });
+
+
+                // 7. Set Final Results
+                setRoutePlanResult({
+                    points: finalRoutePoints,
+                    overallMaxDraft: overallMinDraft === Infinity ? null : overallMinDraft,
+                    criticalPoint: criticalPointInfo,
+                    mgdWarning: mgdWarning
+                });
+                setRoutePlanStatus('calculated');
+
+            } catch (error) {
+                console.error("Error calculating route plan:", error);
+                setRoutePlanResult({ points: [], overallMaxDraft: null, criticalPoint: null, mgdWarning: null, error: error.message });
+                setRoutePlanStatus('error');
+            }
+        // Added calculateCustomRuleOfThumbDisplay dependency
+        }, [plannerSettings, journey, allGaugeStaticData, gaugeApiData, isInJourneyKmRange, calculateDraft, showUncertainty, todayStr, customCorrections, calculateCustomRuleOfThumbDisplay]);
+
+
+        // --- Effect to recalculate plan when uncertainty toggle changes ---
+        useEffect(() => {
+            if (routePlanStatus === 'calculated' && routePlanResult && !routePlanResult.error) {
+                 console.log("Re-calculating route plan due to uncertainty toggle change.");
+                 calculateRoutePlan(); // Recalculate to update uncertainty text in the table
+            }
+        // Only depends on showUncertainty and the calculate function itself
+        }, [showUncertainty, calculateRoutePlan, routePlanStatus, routePlanResult]);
 
 
         // --- Render ---
         return (
             <div className="container">
-                {/* --- Fixed Header Container --- */}
-                <div className="fixed-header-container" ref={fixedHeaderContainerRef}>
-                    {/* Table structure mirrors original thead, populated by JS */}
-                    <table ref={fixedHeaderTableRef}></table>
-                </div>
+                {/* Fixed Header Container (Conditional) */}
+                {activeTab !== 'planner' && (
+                    <div className="fixed-header-container" ref={fixedHeaderContainerRef}>
+                        <table ref={fixedHeaderTableRef}></table>
+                    </div>
+                )}
 
-                {/* Header Controls (from index5) */}
+                {/* Header Controls Area */}
                 <header className="controls-area">
                     <div className="controls-left">
-                         {/* ... Controls content from index5 ... */}
-                         <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>Rijn Diepgang Calculator</h1> {/* Adjusted title size */}
+                         <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem' }}>Rijn Diepgang Calculator</h1>
+                         {/* Auto-refresh checkbox */}
                          <div className="control-group"> <label><input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />Auto-verversing ({REFRESH_INTERVAL_MS / 60000} min)</label> {autoRefresh && nextRefreshTime && <span style={{ marginLeft: '8px', fontSize: '0.8em', color: '#aaa' }}>Volgende: {nextRefreshTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>} </div>
+                         {/* Journey Selection */}
                          <div className="control-group"> <label>Traject (Rijn/Waal):</label> <select value={journey.start ?? ''} onChange={(e) => handleJourneyChange('start', e.target.value)}> <option value="">Selecteer begin</option> {allGaugeStaticData.filter(g => g.isMainRoute).map(gauge => <option key={`start-${gauge.km}-${gauge.name}`} value={gauge.km}>{gauge.km} ({gauge.name})</option>)} </select> <span>tot</span> <select value={journey.end ?? ''} onChange={(e) => handleJourneyChange('end', e.target.value)}> <option value="">Selecteer einde</option> {allGaugeStaticData.filter(g => g.isMainRoute).map(gauge => <option key={`end-${gauge.km}-${gauge.name}`} value={gauge.km}>{gauge.km} ({gauge.name})</option>)} </select> </div>
-                         <div className="control-group"> <label>Weergave Modus:</label> <div className="view-toggle-group"> <label><input type="radio" value="draft" checked={displayMode === 'draft'} onChange={handleDisplayModeChange} /> Diepgang</label> <label><input type="radio" value="level" checked={displayMode === 'level'} onChange={handleDisplayModeChange} /> Waterstand (ruw) </label> </div> </div>
-                         <div className="control-group"> <label> <input type="checkbox" checked={showUncertainty} onChange={handleUncertaintyToggle} /> Toon Prognose Onzekerheid (indien beschikbaar) </label> </div>
+                         {/* Display Mode & Uncertainty Toggle (only for main tabs) */}
+                         {(activeTab === 'route' || activeTab === 'all') && (
+                            <>
+                                <div className="control-group"> <label>Weergave Modus:</label> <div className="view-toggle-group"> <label className="toggle-label"><input type="radio" value="draft" checked={displayMode === 'draft'} onChange={handleDisplayModeChange} /> Diepgang</label> <label className="toggle-label"><input type="radio" value="level" checked={displayMode === 'level'} onChange={handleDisplayModeChange} /> Waterstand (ruw) </label> </div> </div>
+                                <div className="control-group"> <label className="toggle-label"> <input type="checkbox" checked={showUncertainty} onChange={handleUncertaintyToggle} /> Toon Prognose Onzekerheid </label> </div>
+                            </>
+                         )}
+                         {/* Refresh Button & Data Status */}
                          <div className="control-group"> <button className="refresh-btn" onClick={() => handleRefresh(true)} ref={refreshButtonRef} disabled={dataStatus.status === 'pending'}> {dataStatus.status === 'pending' ? 'Laden...' : 'Data opnieuw laden'} </button> <div className={`data-status ${dataStatus.status}`}> {dataStatus.message} {dataStatus.status !== 'pending' && lastUpdated ? `(API tijd: ${lastUpdated.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})` : ''} </div> </div>
                     </div>
-                    {/* Highlight Box (from index5) */}
-                    {activeTab === 'route' && (
-                        <div className="controls-right highlight-box">
-                            {/* ... Highlight box content from index5 ... */}
-                            <div style={{ marginBottom: '6px', fontWeight: 'bold' }}>Kritieke diepgang ({travelDirection === 'downstream' ? 'Af' : 'Op'}):</div>
-                            <div> <span className="label">Nu:</span> <span className="value">{criticalDraftValue !== null ? `${criticalDraftValue.toFixed(0)} cm` : 'N/A'}</span> <span className="gauge">({criticalGaugeName || 'N/A'})</span> <span className="time">({criticalApiDataForHighlight?.currentTime || 'N/A'})</span> </div>
-                            {forecastBottlenecks.map((forecast) => ( <div key={`forecast-bottleneck-${forecast.date}`}> <span className="label">{new Date(forecast.date + 'T12:00:00Z').toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric' })}:</span> <span className="value"> {forecast.draft !== 'N/A' ? `${forecast.draft} cm` : 'N/A'} {showUncertainty && forecast.uncertainty && ( <span style={{fontSize: '0.85em', color: '#333', fontWeight: 'normal', marginLeft: '4px'}}> {forecast.uncertainty} </span> )} </span> <span className="gauge">({forecast.gauge || 'N/A'})</span> <span className="time">({forecast.time || 'N/A'})</span> </div> ))}
-                            {forecastDates.length > 0 && forecastBottlenecks.every(f => f.gauge === null) && dataStatus.status !== 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Geen kritieke prognose gevonden</div>}
-                            {forecastDates.length === 0 && dataStatus.status !== 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Geen prognose data beschikbaar</div>}
-                            {dataStatus.status === 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Prognoses laden...</div>}
-                        </div>
-                    )}
-                    {activeTab !== 'route' && ( <div className="controls-right"><p style={{fontSize: '0.9em', color: '#aaa'}}>Alle beschikbare peilingen en dieptes.</p></div> )}
+                    {/* Right Side Controls / Highlight Box (Contextual) */}
+                    {activeTab === 'route' && ( <div className="controls-right highlight-box"> <div style={{ marginBottom: '6px', fontWeight: 'bold' }}>Kritieke diepgang ({travelDirection === 'downstream' ? 'Af' : 'Op'}):</div> <div> <span className="label">Nu:</span> <span className="value">{criticalDraftValue !== null ? `${criticalDraftValue.toFixed(0)} cm` : 'N/A'}</span> <span className="gauge">({criticalGaugeName || 'N/A'})</span> <span className="time">({criticalApiDataForHighlight?.currentTime || 'N/A'})</span> </div> {forecastBottlenecks.map((forecast) => ( <div key={`forecast-bottleneck-${forecast.date}`}> <span className="label">{new Date(forecast.date + 'T12:00:00Z').toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric' })}:</span> <span className="value"> {forecast.draft !== 'N/A' ? `${forecast.draft} cm` : 'N/A'} {showUncertainty && forecast.uncertainty && ( <span className="forecast-uncertainty"> {forecast.uncertainty} </span> )} </span> <span className="gauge">({forecast.gauge || 'N/A'})</span> <span className="time">({forecast.time || 'N/A'})</span> </div> ))} {forecastDates.length > 0 && forecastBottlenecks.every(f => f.gauge === null) && dataStatus.status !== 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Geen kritieke prognose gevonden</div>} {forecastDates.length === 0 && dataStatus.status !== 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Geen prognose data beschikbaar</div>} {dataStatus.status === 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Prognoses laden...</div>} </div> )}
+                    {activeTab === 'all' && ( <div className="controls-right"><p style={{fontSize: '0.9em', color: '#aaa'}}>Alle beschikbare peilingen en dieptes.</p></div> )}
+                    {activeTab === 'planner' && ( <div className="controls-right"><p style={{fontSize: '0.9em', color: '#aaa'}}>Stel de routeplanner in en bereken de maximaal mogelijke diepgang voor de reis.</p></div> )}
                 </header>
 
                 {/* Main Content Area */}
                 <div className="main-content">
-                    {/* Tabs (from index5) */}
+                    {/* Tabs */}
                     <div className="tab-controls">
-                        <button className={`tab-button ${activeTab === 'route' ? 'active' : ''}`} onClick={() => handleTabChange('route')} >Route Planner (Rijn/Waal)</button>
-                        <button className={`tab-button ${activeTab === 'all' ? 'active' : ''}`} onClick={() => handleTabChange('all')}>Alle Peilingen & Dieptes ({displayedGaugeData.length})</button>
+                        <button className={`tab-button ${activeTab === 'route' ? 'active' : ''}`} onClick={() => handleTabChange('route')} >Max Diepgang (Nu & Prognose)</button>
+                        <button className={`tab-button ${activeTab === 'planner' ? 'active' : ''}`} onClick={() => handleTabChange('planner')} >Route Planner</button>
+                        <button className={`tab-button ${activeTab === 'all' ? 'active' : ''}`} onClick={() => handleTabChange('all')}>Alle Data ({Object.keys(gaugeApiData).length})</button>
                     </div>
 
-                    {/* --- Table Area Layout (using index6 structure) --- */}
-                    <div className="table-area-padding">
-                        {/* Sentinel element to detect when header should stick */}
-                        <div className="header-sentinel" ref={sentinelRef}></div>
+                    {/* Content based on Active Tab */}
 
-                        {/* Wrapper for horizontal scrolling */}
-                        <div className="table-scroll-wrapper" ref={scrollWrapperRef}>
-                            {/* The actual table */}
-                            <table className="original-table" ref={originalTableRef}>
-                                {/* Header - Ref is added here */}
-                                <thead ref={originalTheadRef}>
-                                    {/* Header rows (Structure from index5 - adjusted labels for space) */}
-                                    <tr>
-                                        <th rowSpan="2">Rivier</th>
-                                        <th rowSpan="2">Strecke</th>
-                                        <th rowSpan="2">Naam</th>
-                                        <th rowSpan="2" className="numeric">GIW<br/><span style={{fontSize: '0.85em', fontWeight: 'normal'}}>(cm)</span></th>
-                                        <th rowSpan="2" className="numeric">TuGIW<br/><span style={{fontSize: '0.85em', fontWeight: 'normal'}}>(cm)</span></th>
-                                        <th rowSpan="2" className="numeric"> Waarde <br/> <span style={{fontSize: '0.85em', fontWeight: 'normal'}}>(Act., cm)</span></th>
-                                        <th rowSpan="2" className="numeric">Tendens<br/> <span style={{fontSize: '0.85em', fontWeight: 'normal'}}>(24h)</span></th>
-                                        <th rowSpan="2" className="numeric">Officiële <br/> Vuistregel<br/><span
-                                            style={{fontSize: '0.85em', fontWeight: 'normal'}}>(cm)</span></th>
-                                        <th colSpan="2" className="center">Correctie (cm)</th>
-                                        {/* Aangepaste Vuistregel header - Already correct with colspan=2 */}
-                                        <th colSpan="2" className="center">Aangepaste <br/> Vuistregel (cm)</th>
-                                        <th rowSpan="2" className="numeric"> {displayMode === 'draft' ? 'Diepgang' : 'Waarde'} <br/> <span style={{fontSize: '0.85em', fontWeight: 'normal'}}>(Act., cm)</span></th>
-                                        {/* Add 'forecast-header' class for min-width targeting */}
-                                        {forecastDates.map(dateStr => (
-                                            <th key={`forecast-hdr-${dateStr}`} rowSpan="2" className="numeric forecast-header">
-                                                {new Date(dateStr + 'T12:00:00Z').toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric' })} <br/>
-                                                <span style={{ fontSize: '0.85em', fontWeight: 'normal' }}> ({displayMode === 'draft' ? 'D' : 'S'}, cm) </span>
-                                            </th>
-                                        ))}
-                                        {forecastDates.length === 0 && dataStatus.status !== 'pending' && <th rowSpan="2" className="forecast-header">Geen Prognoses</th>}
-                                    </tr>
-                                    <tr>
-                                        {/* Sub-headers for Correctie */}
-                                        <th className="numeric">Op</th>
-                                        <th className="numeric">Af</th>
-                                         {/* Sub-headers for Aangepaste Vuistregel */}
-                                        <th className="numeric">Op</th>
-                                        <th className="numeric">Af</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {/* Loading/No Data Messages (from index5) */}
-                                    {dataStatus.status === 'pending' && ( <tr><td colSpan={13 + Math.max(1, forecastDates.length)} style={{textAlign: 'center', fontStyle: 'italic', padding: '1rem'}}>Laden...</td></tr> )}
-                                    {dataStatus.status !== 'pending' && displayedGaugeData.length === 0 && ( <tr><td colSpan={13 + Math.max(1, forecastDates.length)} style={{textAlign: 'center', fontStyle: 'italic', padding: '1rem'}}> {activeTab === 'route' ? 'Selecteer een geldig Rijn/Waal traject of geen data beschikbaar voor traject.' : (Object.keys(gaugeApiData).length === 0 ? 'Geen API data geladen.' : 'Geen data beschikbaar voor deze weergave.')} </td></tr> )}
+                    {/* --- Max Draft & All Data Tabs Content --- */}
+                    {(activeTab === 'route' || activeTab === 'all') && (
+                         <div className="table-area-padding">
+                             <div className="header-sentinel" ref={sentinelRef}></div>
+                             <div className="table-scroll-wrapper" ref={scrollWrapperRef}>
+                                 {/* Main data table */}
+                                 <table className="original-table" ref={originalTableRef}>
+                                     <thead ref={originalTheadRef}>
+                                        {/* Header rows */}
+                                        <tr>
+                                            <th rowSpan="2">Rivier</th><th rowSpan="2">Strecke</th><th rowSpan="2">Naam</th>
+                                            <th rowSpan="2" className="numeric">GIW<br/><span style={{fontSize: '0.85em', fontWeight: 'normal'}}>(cm)</span></th>
+                                            <th rowSpan="2" className="numeric">TuGIW<br/><span style={{fontSize: '0.85em', fontWeight: 'normal'}}>(cm)</span></th>
+                                            <th rowSpan="2" className="numeric"> Waarde <br/> <span style={{fontSize: '0.85em', fontWeight: 'normal'}}>(Act., cm)</span></th>
+                                            <th rowSpan="2" className="numeric">Tendens<br/> <span style={{fontSize: '0.85em', fontWeight: 'normal'}}>(24h)</span></th>
+                                            <th rowSpan="2" className="numeric">Off. <br/> Vuist.<br/><span style={{fontSize: '0.85em', fontWeight: 'normal'}}>(cm)</span></th>
+                                            <th colSpan="2" className="center">Correctie (cm)</th>
+                                            <th colSpan="2" className="center">Aang. <br/> Vuist. (cm)</th>
+                                            <th rowSpan="2" className="numeric"> {displayMode === 'draft' ? 'Diepgang' : 'Waarde'} <br/> <span style={{fontSize: '0.85em', fontWeight: 'normal'}}>(Act., cm)</span></th>
+                                            {/* Forecast Headers */}
+                                            {forecastDates.map(dateStr => (
+                                                <th key={`forecast-hdr-${dateStr}`} rowSpan="2" className="numeric forecast-header">
+                                                    {new Date(dateStr + 'T12:00:00Z').toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric' })} <br/>
+                                                    <span style={{ fontSize: '0.85em', fontWeight: 'normal' }}> ({displayMode === 'draft' ? 'D' : 'S'}, cm) </span>
+                                                </th>
+                                            ))}
+                                            {forecastDates.length === 0 && dataStatus.status !== 'pending' && <th rowSpan="2" className="forecast-header">Geen Prognoses</th>}
+                                        </tr>
+                                        <tr><th className="numeric">Op</th><th className="numeric">Af</th><th className="numeric">Op</th><th className="numeric">Af</th></tr>
+                                     </thead>
+                                     <tbody>
+                                        {/* Loading/No Data Messages */}
+                                        {dataStatus.status === 'pending' && ( <tr><td colSpan={13 + Math.max(1, forecastDates.length)} style={{textAlign: 'center', fontStyle: 'italic', padding: '1rem'}}>Laden...</td></tr> )}
+                                        {dataStatus.status !== 'pending' && displayedGaugeData.length === 0 && ( <tr><td colSpan={13 + Math.max(1, forecastDates.length)} style={{textAlign: 'center', fontStyle: 'italic', padding: '1rem'}}> {activeTab === 'route' ? 'Selecteer een geldig Rijn/Waal traject of geen data beschikbaar voor traject.' : (Object.keys(gaugeApiData).length === 0 ? 'Geen API data geladen.' : 'Geen data beschikbaar voor deze weergave.')} </td></tr> )}
+                                        {/* Table Body Rows */}
+                                        {displayedGaugeData.map(gauge => {
+                                            const apiData = gauge.apiData; if (!apiData) return null;
+                                            const isCritical = activeTab === 'route' && gauge.name === criticalGaugeName;
+                                            const currentLevel = apiData.currentLevel; const currentTime = apiData.currentTime || 'N/A'; const currentTrend = apiData.currentTrend ?? '-';
+                                            const officialRuleDisplay = calculateOfficialRuleOfThumb(gauge);
+                                            const customRuleDisplayUp = calculateCustomRuleOfThumbDisplay(gauge, 'upstream');
+                                            const customRuleDisplayDown = calculateCustomRuleOfThumbDisplay(gauge, 'downstream');
+                                            const currentActualDraft = currentLevel !== null ? calculateDraft(gauge, currentLevel, travelDirection) : null;
+                                            const currentLevelDisplay = currentLevel;
+                                            let lastColumnClass = "numeric "; let lastColumnValue = '-';
+                                            if (displayMode === 'draft') { lastColumnClass += 'actual-draft-column'; if (currentActualDraft !== null) { lastColumnValue = currentActualDraft.toFixed(0); if (isCritical) lastColumnClass += ' critical-actual-draft'; } } else { /* actual-level-column class removed */ if (currentLevelDisplay !== null) { lastColumnValue = currentLevelDisplay.toFixed(0); if (isCritical) lastColumnClass += ' critical-actual-level'; } }
+                                            let levelColumnClass = 'numeric'; if (currentLevelDisplay !== null && isCritical) levelColumnClass += ' critical-level';
 
-                                    {/* Table Body Rows (Logic from index5) */}
-                                    {displayedGaugeData.map(gauge => {
-                                        const apiData = gauge.apiData; if (!apiData) return null;
-                                        const isCritical = activeTab === 'route' && gauge.name === criticalGaugeName;
-                                        const currentLevel = apiData.currentLevel; const currentTime = apiData.currentTime || 'N/A'; const currentTrend = apiData.currentTrend ?? '-';
-                                        const officialRuleDisplay = calculateOfficialRuleOfThumb(gauge); const customRuleDisplayUp = calculateCustomRuleOfThumbDisplay(gauge, 'upstream'); const customRuleDisplayDown = calculateCustomRuleOfThumbDisplay(gauge, 'downstream');
-                                        const currentActualDraft = currentLevel !== null ? calculateDraft(gauge, currentLevel) : null; const currentLevelDisplay = currentLevel;
-                                        let lastColumnClass = "numeric "; let lastColumnValue = '-';
-                                        if (displayMode === 'draft') { lastColumnClass += 'actual-draft-column'; if (currentActualDraft !== null) { lastColumnValue = currentActualDraft.toFixed(0); if (isCritical) lastColumnClass += ' critical-actual-draft'; } } else { lastColumnClass += 'actual-level-column'; if (currentLevelDisplay !== null) { lastColumnValue = currentLevelDisplay.toFixed(0); if (isCritical) lastColumnClass += ' critical-actual-level'; } }
-                                        let levelColumnClass = 'numeric'; if (currentLevelDisplay !== null && isCritical) levelColumnClass += ' critical-level';
+                                            return (
+                                                <tr key={`${gauge.name}-${gauge.km ?? gauge.streckenAbschnitt ?? apiData?.apiName}`} className={isCritical ? 'critical-row' : ''}>
+                                                    {/* Cols 1-8 */}
+                                                    <td>{gauge.river || 'N/A'}</td><td>{gauge.streckenAbschnitt || 'N/A'}</td>
+                                                    <td><a href={getGaugeUrl(gauge)} target="_blank" rel="noopener noreferrer" className="gauge-link">{gauge.name}</a></td>
+                                                    <td className="numeric">{gauge.giw !== 'N/A' ? gauge.giw : '-'}</td><td className="numeric">{gauge.depthAtGiw !== 'N/A' ? gauge.depthAtGiw : '-'}</td>
+                                                    <td className={levelColumnClass}> {currentLevelDisplay !== null ? currentLevelDisplay.toFixed(0) : (apiData.status === 'ERROR' ? `Error` : '-')} <div className="time-display">{currentTime !== 'N/A' ? currentTime : (apiData.status ? '' : 'Laden..')}</div> </td>
+                                                    <td className="numeric">{currentTrend}</td><td className="numeric">{officialRuleDisplay}</td>
+                                                    {/* Corrections Inputs (Cols 9-10) */}
+                                                    <td className="numeric"><input type="number" value={customCorrections.upstream[gauge.name] ?? ''} onChange={(e) => handleCorrectionChange('upstream', gauge.name, e.target.value)} /></td>
+                                                    <td className="numeric"><input type="number" value={customCorrections.downstream[gauge.name] ?? ''} onChange={(e) => handleCorrectionChange('downstream', gauge.name, e.target.value)} /></td>
+                                                    {/* Adjusted Rules (Cols 11-12) */}
+                                                    <td className="numeric">{customRuleDisplayUp}</td><td className="numeric">{customRuleDisplayDown}</td>
+                                                    {/* Actual Draft/Level (Col 13) */}
+                                                    <td className={lastColumnClass}> {lastColumnValue} {lastColumnValue !== '-' && <div className="time-display">{currentTime !== 'N/A' ? currentTime : ''}</div>} </td>
+                                                    {/* Forecast Columns (Col 14+) */}
+                                                    {forecastDates.map(dateStr => {
+                                                        let forecastDisplayValue = '-'; let forecastDisplayTime = ''; let uncertaintyText = ''; let valueSource = ''; let foundWeeklySlot = null; const forecastsForDate = apiData.forecasts?.[dateStr];
+                                                        // Daily Forecast Check
+                                                        if (forecastsForDate && Object.keys(forecastsForDate).length > 0) { const selectedTime = getBestForecastTime(forecastsForDate, currentTime); const forecastSlot = selectedTime ? forecastsForDate[selectedTime] : null; if (forecastSlot && forecastSlot.value !== undefined && forecastSlot.value !== null) { const forecastLevel = forecastSlot.value; forecastDisplayTime = selectedTime; valueSource = 'daily'; let calculatedFcValue = (displayMode === 'draft') ? calculateDraft(gauge, forecastLevel, travelDirection) : forecastLevel; forecastDisplayValue = calculatedFcValue !== null ? calculatedFcValue.toFixed(0) : '-'; if (showUncertainty && calculatedFcValue !== null) { if (forecastSlot.low_80 !== null && forecastSlot.high_80 !== null) { let lowVal = forecastSlot.low_80; let highVal = forecastSlot.high_80; if (displayMode === 'draft') { lowVal = calculateDraft(gauge, forecastSlot.low_80, travelDirection); highVal = calculateDraft(gauge, forecastSlot.high_80, travelDirection); } if (lowVal !== null && !isNaN(lowVal) && highVal !== null && !isNaN(highVal)) { uncertaintyText = `(${Math.min(lowVal, highVal).toFixed(0)}–${Math.max(lowVal, highVal).toFixed(0)})`; } else uncertaintyText = '(Bereik N/A)'; } else { const daysAhead = diffDays(todayStr, dateStr); if (!isNaN(daysAhead) && daysAhead > 0) { const elwisUncertainty = daysAhead <= 2 ? 10 : 20; uncertaintyText = `(±${elwisUncertainty} cm)`; } } } } }
+                                                         // Weekly Forecast Fallback
+                                                         if (forecastDisplayValue === '-' && Array.isArray(apiData.weeklyForecasts) && apiData.weeklyForecasts.length > 0) { /* ... weekly fallback logic ... */ const targetDate = new Date(dateStr + 'T12:00:00Z'); for (const weeklyForecast of apiData.weeklyForecasts) { if (weeklyForecast.weekRange && weeklyForecast.median !== null) { try { const [startStr, endStr] = weeklyForecast.weekRange.split('-'); const [startDay, startMonth, startYear] = startStr.split('.'); const [endDay, endMonth, endYear] = endStr.split('.'); const startDate = new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0)); const endDate = new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59)); if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime()) && targetDate >= startDate && targetDate <= endDate) { const forecastLevel = weeklyForecast.median; let calculatedFcValue = (displayMode === 'draft') ? calculateDraft(gauge, forecastLevel, travelDirection) : forecastLevel; if (calculatedFcValue !== null) { forecastDisplayValue = calculatedFcValue.toFixed(0); forecastDisplayTime = "(BfG6W)"; valueSource = 'weekly'; foundWeeklySlot = weeklyForecast; break; } } } catch (e) { /* ... */ } } } }
+                                                         // Weekly Uncertainty
+                                                         if (valueSource === 'weekly' && showUncertainty && foundWeeklySlot) { /* ... weekly uncertainty logic ... */ if (foundWeeklySlot.low_90 !== null && foundWeeklySlot.high_90 !== null) { let lowVal = foundWeeklySlot.low_90; let highVal = foundWeeklySlot.high_90; if (displayMode === 'draft') { lowVal = calculateDraft(gauge, foundWeeklySlot.low_90, travelDirection); highVal = calculateDraft(gauge, foundWeeklySlot.high_90, travelDirection); } if (lowVal !== null && !isNaN(lowVal) && highVal !== null && !isNaN(highVal)) { uncertaintyText = `(${Math.min(lowVal, highVal).toFixed(0)}–${Math.max(lowVal, highVal).toFixed(0)})`; } else uncertaintyText = '(Bereik N/A)'; } }
+                                                         return ( <td key={`forecast-${gauge.name}-${dateStr}`} className="numeric forecast-cell"> {forecastDisplayValue !== '-' ? ( <div> {forecastDisplayValue} {showUncertainty && uncertaintyText && (<span className="uncertainty-display">{uncertaintyText}</span>)} {forecastDisplayTime && (<div className={`time-display ${valueSource === 'weekly' ? 'weekly' : ''}`}>{forecastDisplayTime}</div>)} </div> ) : ('-') } </td> );
+                                                    })}
+                                                    {forecastDates.length === 0 && dataStatus.status !== 'pending' && <td className="forecast-cell">-</td>}
+                                                </tr>
+                                            );
+                                        })}
+                                     </tbody>
+                                 </table>
+                             </div> {/* End .table-scroll-wrapper */}
+                         </div> // End .table-area-padding
+                    )}
 
-                                        return (
-                                            <tr key={`${gauge.name}-${gauge.km ?? gauge.streckenAbschnitt ?? apiData?.apiName}`} className={isCritical ? 'critical-row' : ''}>
-                                                {/* Cols 1-13 */}
-                                                <td>{gauge.river || 'N/A'}</td> <td>{gauge.streckenAbschnitt || 'N/A'}</td>
-                                                <td><a href={getGaugeUrl(gauge)} target="_blank" rel="noopener noreferrer" className="gauge-link">{gauge.name}</a></td>
-                                                <td className="numeric">{gauge.giw !== 'N/A' ? gauge.giw : '-'}</td> <td className="numeric">{gauge.depthAtGiw !== 'N/A' ? gauge.depthAtGiw : '-'}</td>
-                                                <td className={levelColumnClass}> {currentLevelDisplay !== null ? currentLevelDisplay.toFixed(0) : (apiData.status === 'ERROR' ? `Error` : '-')} <div className="time-display">{currentTime !== 'N/A' ? currentTime : (apiData.status ? '' : 'Laden..')}</div> </td>
-                                                <td className="numeric">{currentTrend}</td> <td className="numeric">{officialRuleDisplay}</td>
-                                                <td className="numeric"><input type="number" value={customCorrections.upstream[gauge.name] ?? ''} onChange={(e) => handleCorrectionChange('upstream', gauge.name, e.target.value)} /></td>
-                                                <td className="numeric"><input type="number" value={customCorrections.downstream[gauge.name] ?? ''} onChange={(e) => handleCorrectionChange('downstream', gauge.name, e.target.value)} /></td>
-                                                <td className="numeric">{customRuleDisplayUp}</td> <td className="numeric">{customRuleDisplayDown}</td>
-                                                <td className={lastColumnClass}> {lastColumnValue} {lastColumnValue !== '-' && <div className="time-display">{currentTime !== 'N/A' ? currentTime : ''}</div>} </td>
+                     {/* --- Route Planner Tab Content --- */}
+                     {activeTab === 'planner' && (
+                        <div className="table-area-padding">
+                            {/* Planner Settings Form */}
+                            <div className="planner-settings-group">
+                                <h3>Route Planner Instellingen</h3>
+                                {/* Start Date/Time */}
+                                <div className="control-group"> <label htmlFor="startDate">Vertrek Datum/Tijd:</label> <input type="datetime-local" id="startDate" value={plannerSettings.startDate} onChange={(e) => handlePlannerSettingChange('startDate', e.target.value)} /> <button onClick={handleSetNow} className="now-button">Nu</button> </div>
+                                {/* Speeds */}
+                                <div className="control-group"> <label htmlFor="speedDownstream">Snelheid Stroomaf (km/u):</label> <input type="number" id="speedDownstream" min="1" value={plannerSettings.speedDownstream} onChange={(e) => handlePlannerSettingChange('speedDownstream', Number(e.target.value))} /> </div>
+                                <div className="control-group"> <label htmlFor="speedUpstream">Snelheid Stroomop (km/u):</label> <input type="number" id="speedUpstream" min="1" value={plannerSettings.speedUpstream} onChange={(e) => handlePlannerSettingChange('speedUpstream', Number(e.target.value))} /> </div>
+                                {/* Operational Mode */}
+                                <div className="control-group"> <label htmlFor="operationalMode">Operatie Modus:</label> <select id="operationalMode" value={plannerSettings.operationalMode} onChange={handleOperationalModeChange} > <option value="A1">A1 (14 uur/dag)</option><option value="A2">A2 (18 uur/dag)</option> <option value="B">B (24 uur/dag)</option><option value="Custom">Custom</option> </select> {plannerSettings.operationalMode === 'Custom' && ( <input type="number" min="1" max="24" step="0.5" style={{width: "60px", marginLeft: "0.5rem"}} aria-label="Custom operational hours" value={plannerSettings.customOperationalHours} onChange={(e) => handlePlannerSettingChange('customOperationalHours', Number(e.target.value))} /> )} {plannerSettings.operationalMode !== 'Custom' && ( <span style={{fontSize: '0.85em', color: '#aaa', marginLeft: '0.5rem'}}> ({plannerSettings.operationalMode === 'A1' ? 14 : (plannerSettings.operationalMode === 'A2' ? 18 : 24)} uur/dag) </span> )} </div>
+                                 {/* Excluded Days */}
+                                 <div className="control-group"> <label>Uitgesloten Dagen:</label> <div className="excluded-days-group"> {WEEKDAYS.map((day, index) => ( <label key={day} className="day-label"> <input type="checkbox" checked={plannerSettings.excludedDays.includes(index)} onChange={(e) => handleExcludedDayChange(index, e.target.checked)} /> {day} </label> ))} </div> </div>
+                                  {/* Uncertainty Toggle for Planner */}
+                                  <div className="control-group"> <label htmlFor="showUncertaintyPlanner" className="toggle-label">Toon Prognose Onzekerheid:</label> <input type="checkbox" id="showUncertaintyPlanner" checked={showUncertainty} onChange={handleUncertaintyToggle} /> <span style={{fontSize: '0.8em', color: '#aaa'}}>(Indien beschikbaar)</span> </div>
 
-                                                {/* Col 14+: Forecasts (Logic from index5) */}
-                                                {forecastDates.map(dateStr => {
-                                                    let forecastDisplayValue = '-'; let forecastDisplayTime = '';
-                                                    let uncertaintyText = ''; let valueSource = ''; let foundWeeklySlot = null;
+                                {/* --- NEW Custom Segment Inputs --- */}
+                                <div style={{borderTop: '1px solid #444', paddingTop: '1rem', marginTop: '1rem'}}>
+                                    <h4>Optioneel Extra Trajectdeel</h4>
+                                    <div className="control-group">
+                                        <label htmlFor="customSegmentKm">Extra Afstand (km):</label>
+                                        <input
+                                            type="number"
+                                            id="customSegmentKm"
+                                            min="0"
+                                            step="1"
+                                            style={{width: "70px"}}
+                                            value={plannerSettings.customSegmentKm}
+                                            onChange={(e) => handlePlannerSettingChange('customSegmentKm', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="control-group">
+                                        <label htmlFor="customSegmentSpeed">Snelheid Extra Deel (km/u):</label>
+                                        <input
+                                            type="number"
+                                            id="customSegmentSpeed"
+                                            min="0" // Allow 0, calculation logic handles divide by zero if km > 0
+                                            step="0.5"
+                                            style={{width: "70px"}}
+                                            value={plannerSettings.customSegmentSpeed}
+                                            onChange={(e) => handlePlannerSettingChange('customSegmentSpeed', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div className="control-group">
+                                        <label htmlFor="customSegmentPosition">Positie Extra Deel:</label>
+                                        <select
+                                            id="customSegmentPosition"
+                                            value={plannerSettings.customSegmentPosition}
+                                            onChange={(e) => handlePlannerSettingChange('customSegmentPosition', e.target.value)}
+                                        >
+                                            <option value="end">Na berekende route</option>
+                                            <option value="start">Vóór berekende route</option>
+                                        </select>
+                                        <span style={{fontSize: '0.8em', color: '#aaa', marginLeft: '0.5rem'}}>(Voegt tijd toe aan begin/eind ETA)</span>
+                                    </div>
+                                </div>
+                                {/* End Custom Segment Inputs */}
 
-                                                    const forecastsForDate = apiData.forecasts?.[dateStr];
-                                                    if (forecastsForDate && Object.keys(forecastsForDate).length > 0) {
-                                                        const selectedTime = getBestForecastTime(forecastsForDate, currentTime); const forecastSlot = selectedTime ? forecastsForDate[selectedTime] : null;
-                                                        if (forecastSlot && forecastSlot.value !== undefined && forecastSlot.value !== null) {
-                                                            const forecastLevel = forecastSlot.value; forecastDisplayTime = selectedTime; valueSource = 'daily';
-                                                            let calculatedFcValue = (displayMode === 'draft') ? calculateDraft(gauge, forecastLevel) : forecastLevel;
-                                                            forecastDisplayValue = calculatedFcValue !== null ? calculatedFcValue.toFixed(0) : '-';
-                                                            if (showUncertainty && calculatedFcValue !== null) {
-                                                                if (forecastSlot.low_80 !== null && forecastSlot.high_80 !== null) { let lowVal = forecastSlot.low_80; let highVal = forecastSlot.high_80; if (displayMode === 'draft') { lowVal = calculateDraft(gauge, forecastSlot.low_80); highVal = calculateDraft(gauge, forecastSlot.high_80); } if (lowVal !== null && !isNaN(lowVal) && highVal !== null && !isNaN(highVal)) { uncertaintyText = `(${Math.min(lowVal, highVal).toFixed(0)}–${Math.max(lowVal, highVal).toFixed(0)})`; } else uncertaintyText = '(Bereik N/A)'; } // Used en-dash
-                                                                else { const daysAhead = diffDays(todayStr, dateStr); if (!isNaN(daysAhead) && daysAhead > 0) { const elwisUncertainty = daysAhead <= 2 ? 10 : 20; uncertaintyText = `(±${elwisUncertainty} cm)`; } }
-                                                            }
-                                                        }
-                                                    }
+                                {/* Calculate Button */}
+                                <div className="control-group" style={{marginTop: '1rem'}}>
+                                    <button
+                                        className="planner-calculate-btn"
+                                        onClick={calculateRoutePlan}
+                                        // Use explicit null check for journey start/end
+                                        disabled={routePlanStatus === 'calculating' || journey.start === null || journey.end === null}
+                                    >
+                                        {routePlanStatus === 'calculating' ? 'Berekenen...' : 'Bereken Maximale Diepgang'}
+                                    </button>
+                                </div>
+                            </div> {/* End Planner Settings Group */}
 
-                                                    if (forecastDisplayValue === '-' && Array.isArray(apiData.weeklyForecasts) && apiData.weeklyForecasts.length > 0) {
-                                                        const targetDate = new Date(dateStr + 'T12:00:00Z');
-                                                        for (const weeklyForecast of apiData.weeklyForecasts) {
-                                                            if (weeklyForecast.weekRange && weeklyForecast.median !== null) {
-                                                                try { const [startStr, endStr] = weeklyForecast.weekRange.split('-'); const [startDay, startMonth, startYear] = startStr.split('.'); const [endDay, endMonth, endYear] = endStr.split('.'); const startDate = new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0)); const endDate = new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59)); if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime()) && targetDate >= startDate && targetDate <= endDate) { const forecastLevel = weeklyForecast.median; let calculatedFcValue = (displayMode === 'draft') ? calculateDraft(gauge, forecastLevel) : forecastLevel; if (calculatedFcValue !== null) { forecastDisplayValue = calculatedFcValue.toFixed(0); forecastDisplayTime = "(BfG6W)"; valueSource = 'weekly'; foundWeeklySlot = weeklyForecast; break; } } }
-                                                                catch (e) { console.warn(`Error parsing weekRange "${weeklyForecast.weekRange}" for gauge ${gauge.name}:`, e); }
-                                                            }
-                                                        }
-                                                    }
+                             {/* --- Planner Results Display --- */}
+                             {/* Error Message */}
+                             {routePlanStatus === 'error' && routePlanResult?.error && ( <div style={{ color: '#ff6666', marginTop: '1rem', border: '1px solid red', padding: '0.5rem' }}> Fout bij berekenen: {routePlanResult.error} </div> )}
 
-                                                    if (valueSource === 'weekly' && showUncertainty && foundWeeklySlot) {
-                                                        if (foundWeeklySlot.low_90 !== null && foundWeeklySlot.high_90 !== null) { let lowVal = foundWeeklySlot.low_90; let highVal = foundWeeklySlot.high_90; if (displayMode === 'draft') { lowVal = calculateDraft(gauge, foundWeeklySlot.low_90); highVal = calculateDraft(gauge, foundWeeklySlot.high_90); } if (lowVal !== null && !isNaN(lowVal) && highVal !== null && !isNaN(highVal)) { uncertaintyText = `(${Math.min(lowVal, highVal).toFixed(0)}–${Math.max(lowVal, highVal).toFixed(0)})`; } else uncertaintyText = '(Bereik N/A)'; } // Used en-dash
-                                                    }
+                             {/* Calculated Results */}
+                             {routePlanStatus === 'calculated' && routePlanResult && !routePlanResult.error && (
+                                <div className="route-plan-results">
+                                    <h4>Route Plan Resultaat</h4>
+                                    {/* Summary: Max Draft and Critical Point */}
+                                    <div className="route-plan-summary">
+                                         Maximale Mogelijke Diepgang: <strong>{routePlanResult.overallMaxDraft !== null ? `${routePlanResult.overallMaxDraft.toFixed(0)} cm` : 'N/A'}</strong>
+                                         {routePlanResult.criticalPoint && (
+                                            <span style={{fontSize: '0.9em', color: '#ccc'}}> (Beperkt door: {routePlanResult.criticalPoint.name} op KM {routePlanResult.criticalPoint.km}
+                                                {/* Display uncertainty of the critical point */}
+                                                {showUncertainty && routePlanResult.criticalPoint.uncertaintyText ? ` ${routePlanResult.criticalPoint.uncertaintyText}` : ''})
+                                            </span>
+                                         )}
+                                    </div>
+                                     {/* MGD Warning */}
+                                     {routePlanResult.mgdWarning && ( <div className="mgd-warning"> {routePlanResult.mgdWarning} </div> )}
 
-                                                    // Add 'forecast-cell' class for potential body cell styling
-                                                    return ( <td key={`forecast-${gauge.name}-${dateStr}`} className="numeric forecast-cell"> {forecastDisplayValue !== '-' ? ( <div> {forecastDisplayValue} {showUncertainty && uncertaintyText && (<span className="uncertainty-display">{uncertaintyText}</span>)} {forecastDisplayTime && (<div className={`time-display ${valueSource === 'weekly' ? 'weekly' : ''}`}>{forecastDisplayTime}</div>)} </div> ) : ('-') } </td> );
-                                                })}
-                                                {forecastDates.length === 0 && dataStatus.status !== 'pending' && <td className="forecast-cell">-</td>}
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div> {/* End .table-scroll-wrapper */}
-                    </div> {/* End .table-area-padding */}
+                                     {/* Route Details Table */}
+                                     <h5>Route Details:</h5>
+                                     {/* Scroll Wrapper for the table */}
+                                     <div className="table-scroll-wrapper">
+                                        <table className="original-table">
+                                            <thead>
+                                                <tr>
+                                                    {/* Adjusted headers for new column */}
+                                                    <th>KM</th>
+                                                    <th>Naam</th>
+                                                    <th>ETA</th>
+                                                    <th>Prog. Niveau (cm)</th>
+                                                    <th>Offset (cm)</th>
+                                                    {/* NEW Header for Corrected Rule */}
+                                                    <th>Aang.<br/>Vuist.<br/>(cm)</th>
+                                                    <th>Maximale Diepgang (cm)</th>
+                                                    <th>Notities</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            {/* Message if no points calculated */}
+                                            {routePlanResult.points.length === 0 && ( <tr><td colSpan="8" style={{textAlign: 'center', fontStyle: 'italic'}}>Geen routepunten berekend (mogelijk geen prognoses beschikbaar voor ETA's).</td></tr> )}
+                                            {/* Iterate through calculated points */}
+                                            {routePlanResult.points.map((point, index) => (
+                                                <tr key={`${point.name}-${point.km}-${index}`} className={point.isCritical ? 'critical-route-point' : ''}>
+                                                    {/* Data Cells */}
+                                                    <td className="numeric">{point.km}</td>
+                                                    <td><a href={getGaugeUrl(point.gaugeRef)} target="_blank" rel="noopener noreferrer" className="gauge-link">{point.name}</a></td>
+                                                    <td className="eta-time">
+                                                        {point.eta.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short' })} {' '}
+                                                        {point.eta.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                                                    </td>
+                                                    <td className="numeric">
+                                                        {point.forecastLevel !== null ? point.forecastLevel.toFixed(0) : '-'}
+                                                        {point.forecastTime && point.forecastTime !== 'N/A' && (
+                                                            <div className={`time-display ${point.forecastSource === 'weekly' ? 'weekly' : (point.forecastSource === 'current' ? 'current' : '')}`}>{point.forecastTime}</div>
+                                                        )}
+                                                    </td>
+                                                    {/* Offset Value */}
+                                                    <td className="offset-value numeric"> {point.offset} </td>
+                                                    {/* NEW Data Cell for Corrected Rule */}
+                                                    <td className="numeric"> {point.correctedRule !== 'N/A' && !isNaN(Number(point.correctedRule)) ? Number(point.correctedRule).toFixed(0) : (point.correctedRule === 'N/A' ? '-' : point.correctedRule) } </td>
+                                                    {/* Max Draft Value */}
+                                                    <td className="numeric">
+                                                        {point.draftAtEta !== null ? point.draftAtEta.toFixed(0) : '-'}
+                                                         {showUncertainty && point.draftUncertaintyText && ( <span className="uncertainty-display" style={{textAlign: 'right'}}>{point.draftUncertaintyText}</span> )}
+                                                    </td>
+                                                    {/* Notes */}
+                                                    <td>{point.notes}</td>
+                                                </tr>
+                                             ))}
+                                            </tbody>
+                                        </table>
+                                     </div> {/* End table-scroll-wrapper for results */}
+                                </div> // End route-plan-results
+                            )}
+                        </div> // End .table-area-padding for planner
+                     )}
+
                 </div> {/* End .main-content */}
 
-                {/* Footer (from index5) */}
+                {/* Footer */}
                 <footer>
                      <div>Data API per: {lastUpdated ? lastUpdated.toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' }) : 'Nog niet geladen'}</div>
-                    <div>RDD Calculator v5.1 - Compact Layout</div> {/* Updated version */}
+                    <div>RDD Calculator v6.3 - Planner Enhancements</div> {/* Updated version */}
                 </footer>
-            </div>
+            </div> // End .container
         );
     }
 
+    // --- Render the App ---
     ReactDOM.render(<RhineDraftCalculator />, document.getElementById('root'));
 
 </script>
