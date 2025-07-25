@@ -936,6 +936,7 @@ const finalRoutePoints = intermediatePoints.map(point => {
                                 <span className="time">({forecast.time || 'N/A'})</span>
                             </div>
                         ))}
+
                         {forecastDates.length > 0 && forecastBottlenecks.every(f => f.gauge === null) && dataStatus.status !== 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Geen kritieke prognose gevonden</div>} {forecastDates.length === 0 && dataStatus.status !== 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Geen prognose data beschikbaar</div>} {dataStatus.status === 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Prognoses laden...</div>} </div> )}
                     {activeTab === 'all' && ( <div className="controls-right"><p style={{fontSize: '0.9em', color: '#aaa'}}>Alle beschikbare peilingen en dieptes.</p></div> )}
                     {activeTab === 'planner' && ( <div className="controls-right"><p style={{fontSize: '0.9em', color: '#aaa'}}>Stel de routeplanner in en bereken de maximaal mogelijke diepgang voor de reis.</p></div> )}
