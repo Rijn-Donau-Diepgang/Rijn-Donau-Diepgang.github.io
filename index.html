@@ -376,7 +376,18 @@
     .highlight-box span.value { display: inline-block; min-width: 55px; font-size: 0.9em;}
     .highlight-box span.gauge { font-size: 0.8em; color: #333; margin-left: 4px; }
     .highlight-box span.time { font-size: 0.75em; color: #555; margin-left: 4px; }
-    .highlight-box .forecast-uncertainty { font-size: 0.8em; color: #333; font-weight: normal; display: block; margin-left: 65px; margin-top: -2px; margin-bottom: 3px; }
+
+    .highlight-box .forecast-uncertainty {
+    font-size: 0.8em;
+    color: #333;
+    font-weight: normal;
+    display: inline-block;
+    vertical-align: baseline;
+    margin-left: 4px;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
     .data-status { padding: 0.4rem 0.8rem; background-color: #333; border-radius: 4px; font-size: 0.8rem; border-left: 4px solid #555; display: inline-block; margin-left: 0.5rem; }
     .data-status.pending { background-color: #444; border-left-color: #aaa; }
     .data-status.success { background-color: #004d00; border-left-color: #00cc66; }
@@ -836,7 +847,7 @@ const finalRoutePoints = intermediatePoints.map(point => {
     {
         // Offset calculation: Water Level - Overall Minimum Draft
         // Shows margin compared to the lowest point on the route
-        const offsetCalc = point.forecastLevel - overallMinDraft;
+        const offsetCalc = -point.forecastLevel + overallMinDraft;
         if (!isNaN(offsetCalc)) {
             finalOffset = (offsetCalc >= 0 ? '+' : '') + offsetCalc.toFixed(0);
         }
@@ -913,7 +924,19 @@ const finalRoutePoints = intermediatePoints.map(point => {
                          <div className="control-group"> <button className="refresh-btn" onClick={() => handleRefresh(true)} ref={refreshButtonRef} disabled={dataStatus.status === 'pending'}> {dataStatus.status === 'pending' ? 'Laden...' : 'Data opnieuw laden'} </button> <div className={`data-status ${dataStatus.status}`}> {dataStatus.message} {dataStatus.status !== 'pending' && lastUpdated ? `(API tijd: ${lastUpdated.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})` : ''} </div> </div>
                     </div>
                     {/* Right Side Controls / Highlight Box (Contextual) */}
-                    {activeTab === 'route' && ( <div className="controls-right highlight-box"> <div style={{ marginBottom: '6px', fontWeight: 'bold' }}>Kritieke diepgang ({travelDirection === 'downstream' ? 'Af' : 'Op'}):</div> <div> <span className="label">Nu:</span> <span className="value">{criticalDraftValue !== null ? `${criticalDraftValue.toFixed(0)} cm` : 'N/A'}</span> <span className="gauge">({criticalGaugeName || 'N/A'})</span> <span className="time">({criticalApiDataForHighlight?.currentTime || 'N/A'})</span> </div> {forecastBottlenecks.map((forecast) => ( <div key={`forecast-bottleneck-${forecast.date}`}> <span className="label">{new Date(forecast.date + 'T12:00:00Z').toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric' })}:</span> <span className="value"> {forecast.draft !== 'N/A' ? `${forecast.draft} cm` : 'N/A'} {showUncertainty && forecast.uncertainty && ( <span className="forecast-uncertainty"> {forecast.uncertainty} </span> )} </span> <span className="gauge">({forecast.gauge || 'N/A'})</span> <span className="time">({forecast.time || 'N/A'})</span> </div> ))} {forecastDates.length > 0 && forecastBottlenecks.every(f => f.gauge === null) && dataStatus.status !== 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Geen kritieke prognose gevonden</div>} {forecastDates.length === 0 && dataStatus.status !== 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Geen prognose data beschikbaar</div>} {dataStatus.status === 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Prognoses laden...</div>} </div> )}
+                    {activeTab === 'route' && ( <div className="controls-right highlight-box"> <div style={{ marginBottom: '6px', fontWeight: 'bold' }}>Kritieke diepgang ({travelDirection === 'downstream' ? 'Af' : 'Op'}):</div> <div> <span className="label">Nu:</span> <span className="value">{criticalDraftValue !== null ? `${criticalDraftValue.toFixed(0)} cm` : 'N/A'}</span> <span className="gauge">({criticalGaugeName || 'N/A'})</span> <span className="time">({criticalApiDataForHighlight?.currentTime || 'N/A'})</span> </div>
+                                          {forecastBottlenecks.map((forecast) => (
+                            <div key={`forecast-bottleneck-${forecast.date}`}>
+                                <span className="label">{new Date(forecast.date + 'T12:00:00Z').toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric' })}:</span>
+                                <span className="value">{forecast.draft !== 'N/A' ? `${forecast.draft} cm` : 'N/A'}</span>
+                                {showUncertainty && forecast.uncertainty && (
+                                    <span className="forecast-uncertainty">{forecast.uncertainty}</span>
+                                )}
+                                <span className="gauge">({forecast.gauge || 'N/A'})</span>
+                                <span className="time">({forecast.time || 'N/A'})</span>
+                            </div>
+                        ))}
+                        {forecastDates.length > 0 && forecastBottlenecks.every(f => f.gauge === null) && dataStatus.status !== 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Geen kritieke prognose gevonden</div>} {forecastDates.length === 0 && dataStatus.status !== 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Geen prognose data beschikbaar</div>} {dataStatus.status === 'pending' && <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Prognoses laden...</div>} </div> )}
                     {activeTab === 'all' && ( <div className="controls-right"><p style={{fontSize: '0.9em', color: '#aaa'}}>Alle beschikbare peilingen en dieptes.</p></div> )}
                     {activeTab === 'planner' && ( <div className="controls-right"><p style={{fontSize: '0.9em', color: '#aaa'}}>Stel de routeplanner in en bereken de maximaal mogelijke diepgang voor de reis.</p></div> )}
                 </header>
