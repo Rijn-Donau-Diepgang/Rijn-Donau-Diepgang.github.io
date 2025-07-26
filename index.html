@@ -161,9 +161,9 @@
         --col-default-width: 60px;
 
         /* Column-specific widths (FROM FIRST BLOCK - DESIRED ORIGINAL STATE) */
-        --col-1-width: 70px;  /* Rivier */
-        --col-2-width: 50px; /* Strecke */
-        --col-3-width: 80px; /* Naam */
+        --col-1-width: 80px;  /* Rivier */
+        --col-2-width: 90px; /* Strecke */
+        --col-3-width: 95px; /* Naam */
         --col-4-width: 45px;  /* GIW */
         --col-5-width: 45px;  /* TuGIW */
         --col-6-width: 45px;  /* Waarde Actueel */
@@ -453,6 +453,9 @@
         const [routePlanResult, setRoutePlanResult] = useState(null);
         const [routePlanStatus, setRoutePlanStatus] = useState('idle');
 
+        // NEW: State for the river filter on the 'All Data' tab
+        const [riverFilter, setRiverFilter] = useState('all');
+
         // NEW State for Custom Segment
         const [plannerSettings, setPlannerSettings] = useState(() => {
             const savedSettings = getCookie('rhinePlannerSettings');
@@ -493,7 +496,7 @@
                 { name: 'Mainz', km: 498, river: 'Rijn', streckenAbschnitt: '462-508', giw: 171, depthAtGiw: 210, officialSafetyMargin: 30, correctionOp: 11, correctionAf: 11 },
                 { name: 'Oestrich', km: 518, river: 'Rijn', streckenAbschnitt: '508-528', giw: 92, depthAtGiw: 190, officialSafetyMargin: 30, correctionOp: 42, correctionAf: 42 },
                 { name: 'Bingen', km: 528, river: 'Rijn', streckenAbschnitt: '528-540', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: 100 },
-                { name: 'Kaub', km: 546, river: 'Rijn', streckenAbschnitt: '541-566', giw: 77, depthAtGiw: 190, officialSafetyMargin: 30, correctionOp: 17, correctionAf: 27 },
+                { name: 'Kaub', km: 546, river: 'Rijn', streckenAbschnitt: '541-566', giw: 77, depthAtGiw: 190, officialSafetyMargin: 30, correctionOp: 17, correctionAf: 17 },
                 { name: 'Koblenz', km: 591, river: 'Rijn', streckenAbschnitt: '566-592', giw: 77, depthAtGiw: 210, officialSafetyMargin: 30, correctionOp: 27, correctionAf: 27 },
                 { name: 'Koblenz (Mosel)', apiDataName: 'Koblenz', km: 592, river: 'Rijn', streckenAbschnitt: '592-601', giw: 77, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
                 { name: 'Andernach', km: 613, river: 'Rijn', streckenAbschnitt: '601-624', giw: 91, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
@@ -511,7 +514,7 @@
                 { name: 'Doesburg', km: 903, river: 'IJssel', streckenAbschnitt: 'IJ 903-931', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 10, correctionAf: 20, customVuistregel: -200 },
                 { name: 'Deventer', km: 931, river: 'IJssel', streckenAbschnitt: 'IJ 931-981', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 10, customVuistregel: 90 },
                 { name: 'Katerveer', km: 981, river: 'IJssel', streckenAbschnitt: 'IJ 981-1005', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 10, customVuistregel: 270 },
-                { name: 'Spijk - Woudrichem', km: 931, river: 'MGD', streckenAbschnitt: 'Waal km 930-951', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0, isMGDTarget: true }, // Mark as MGD target
+                { name: 'Spijk - Woudrichem', km: 931, river: 'MGD', streckenAbschnitt: 'Waal km 858-953', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0, isMGDTarget: true }, // Mark as MGD target
                 { name: 'Millingen tot Maas-Waalkanaal', km: 867, river: 'MGD', streckenAbschnitt: 'Waal (deeltraject)', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0, isMGDTarget: true },
                 { name: 'Maas-Waalkanaal tot Amsterdam-Rijnkanaal', km: 895, river: 'MGD', streckenAbschnitt: 'Waal (deeltraject)', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0, isMGDTarget: true },
                 { name: 'Amsterdam-Rijnkanaal tot Loevestein', km: 925, river: 'MGD', streckenAbschnitt: 'Waal (deeltraject)', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0, isMGDTarget: true },
@@ -521,6 +524,7 @@
                 { name: 'Heteren - A\'dam-Rijnkanaal', km: 905, river: 'MGD', streckenAbschnitt: 'Nederrijn km 888-905', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
                 { name: 'A\'dam-Rijnkanaal - Hagestein', km: 922, river: 'MGD', streckenAbschnitt: 'Lek km 905-922', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
                 { name: 'IJsselkop - Twenthekanaal', km: 921, river: 'MGD', streckenAbschnitt: 'IJssel km 878-921', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
+                 {name: 'Twenthekanaal - Zwolle-IJsselkanaal', km: 981, river: 'MGD', streckenAbschnitt: 'IJssel km 921-981', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
                 { name: 'Uitvaartdiepte Oostsluis Weurt', km: 886, river: 'MGD', streckenAbschnitt: 'Oostsluis Weurt', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 },
                 { name: 'Uitvaartdiepte Westsluis Weurt', km: 886.1, river: 'MGD', streckenAbschnitt: 'Westsluis Weurt', officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN, correctionOp: 0, correctionAf: 0 }
              ];
@@ -607,8 +611,49 @@
         // Check if a gauge KM is within the selected journey range
         const isInJourneyKmRange = useCallback((gaugeKm) => { /* ... */ if (journey.start === null || journey.end === null || gaugeKm === null || gaugeKm === undefined) return false; const startKm = Number(journey.start); const endKm = Number(journey.end); if (isNaN(startKm) || isNaN(endKm)) return false; return gaugeKm >= Math.min(startKm, endKm) && gaugeKm <= Math.max(startKm, endKm); }, [journey]);
 
-        // Filter gauge data for the "Max Draft" / "All" tabs
-        const displayedGaugeDataMaxDraft = useMemo(() => { /* ... */ const data = allGaugeStaticData.filter(staticGauge => { const apiData = gaugeApiData[staticGauge.name]; const hasApiData = !!apiData && (apiData.status === 'OK' || apiData.status?.startsWith('CACHED') || apiData.status === 'WARNING'); if (activeTab === 'route') return staticGauge.isMainRoute && isInJourneyKmRange(staticGauge.km) && hasApiData; else if (activeTab === 'all') return hasApiData; return false; }).map(staticGauge => ({ ...staticGauge, apiData: gaugeApiData[staticGauge.name] })); return data; }, [allGaugeStaticData, gaugeApiData, activeTab, isInJourneyKmRange]);
+        // MODIFIED: Filter gauge data for the "Max Draft" / "All" tabs, now with river filter logic
+        const displayedGaugeDataMaxDraft = useMemo(() => {
+            const data = allGaugeStaticData.filter(staticGauge => {
+                // First, check if there is any API data for this gauge. If not, exclude it.
+                const apiData = gaugeApiData[staticGauge.name];
+                const hasApiData = !!apiData && (apiData.status === 'OK' || apiData.status?.startsWith('CACHED') || apiData.status === 'WARNING');
+                if (!hasApiData) {
+                    return false;
+                }
+
+                // Logic for "Max Diepgang (Route)" tab
+                if (activeTab === 'route') {
+                    return staticGauge.isMainRoute && isInJourneyKmRange(staticGauge.km);
+                }
+
+                // Logic for "Alle Data" tab, including the new river filter
+                if (activeTab === 'all') {
+                    if (riverFilter === 'all') {
+                        return true; // Show all gauges with data
+                    }
+                    if (riverFilter === 'Rijn/Waal') {
+                        // Show Rijn/Waal gauges AND the specific Spijk-Woudrichem MGD gauge
+                        return staticGauge.river === 'Rijn' || staticGauge.river === 'Waal' || staticGauge.name === 'Spijk - Woudrichem' ;
+                    }
+
+                    if (riverFilter === 'IJssel') {
+                        const ijsselMgdNames = [
+                            'IJsselkop - Twenthekanaal',
+                            'Twenthekanaal - Zwolle-IJsselkanaal'
+                        ];
+                        // Show IJssel gauges AND the specific IJssel-related MGD gauges
+                        return staticGauge.river === 'IJssel' || ijsselMgdNames.includes(staticGauge.name);
+                    }
+                    // For any other selection (e.g., 'MGD', 'Pannerdens Kanaal'), match the river name exactly
+                    return staticGauge.river === riverFilter;
+                }
+
+                return false; // Default case
+            }).map(staticGauge => ({ ...staticGauge, apiData: gaugeApiData[staticGauge.name] }));
+
+            return data;
+        }, [allGaugeStaticData, gaugeApiData, activeTab, isInJourneyKmRange, riverFilter]); // MODIFIED: Added riverFilter dependency
+
 
         // Determine which data to display based on the active tab
         const displayedGaugeData = activeTab === 'planner' ? [] : displayedGaugeDataMaxDraft;
@@ -885,6 +930,21 @@
                          <div className="control-group"> <label><input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />Auto-verversing ({REFRESH_INTERVAL_MS / 60000} min)</label> {autoRefresh && nextRefreshTime && <span style={{ marginLeft: '8px', fontSize: '0.8em', color: '#aaa' }}>Volgende: {nextRefreshTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>} </div>
                          {/* Journey Selection */}
                          <div className="control-group"> <label>Traject (Rijn/Waal):</label> <select value={journey.start ?? ''} onChange={(e) => handleJourneyChange('start', e.target.value)}> <option value="">Selecteer begin</option> {allGaugeStaticData.filter(g => g.isMainRoute).map(gauge => <option key={`start-${gauge.km}-${gauge.name}`} value={gauge.km}>{gauge.km} ({gauge.name})</option>)} </select> <span>tot</span> <select value={journey.end ?? ''} onChange={(e) => handleJourneyChange('end', e.target.value)}> <option value="">Selecteer einde</option> {allGaugeStaticData.filter(g => g.isMainRoute).map(gauge => <option key={`end-${gauge.km}-${gauge.name}`} value={gauge.km}>{gauge.km} ({gauge.name})</option>)} </select> </div>
+
+                         {/* NEW: River Filter for 'All' tab */}
+                         {activeTab === 'all' && (
+                            <div className="control-group">
+                                <label>Filter op Rivier:</label>
+                                <select value={riverFilter} onChange={(e) => setRiverFilter(e.target.value)}>
+                                    <option value="all">Alle Rivieren</option>
+                                    <option value="Rijn/Waal">Rijn/Waal</option>
+                                    <option value="IJssel">IJssel</option>
+                                    <option value="Pannerdens Kanaal">Pannerdens Kanaal</option>
+                                    <option value="MGD">Alle MGD</option>
+                                </select>
+                            </div>
+                         )}
+
                          {/* Display Mode & Uncertainty Toggle (only for main tabs) */}
                          {(activeTab === 'route' || activeTab === 'all') && (
                             <>
@@ -920,7 +980,7 @@
                     <div className="tab-controls">
                         <button className={`tab-button ${activeTab === 'route' ? 'active' : ''}`} onClick={() => handleTabChange('route')} >Max Diepgang (Nu & Prognose)</button>
                         <button className={`tab-button ${activeTab === 'planner' ? 'active' : ''}`} onClick={() => handleTabChange('planner')} >Route Planner</button>
-                        <button className={`tab-button ${activeTab === 'all' ? 'active' : ''}`} onClick={() => handleTabChange('all')}>Alle Data ({Object.keys(gaugeApiData).length})</button>
+                        <button className={`tab-button ${activeTab === 'all' ? 'active' : ''}`} onClick={() => handleTabChange('all')}>Alle Data ({displayedGaugeData.length})</button>
                     </div>
 
                     {/* Content based on Active Tab */}
@@ -958,7 +1018,7 @@
                                      <tbody>
                                         {/* Loading/No Data Messages */}
                                         {dataStatus.status === 'pending' && ( <tr><td colSpan={13 + Math.max(1, forecastDates.length)} style={{textAlign: 'center', fontStyle: 'italic', padding: '1rem'}}>Laden...</td></tr> )}
-                                        {dataStatus.status !== 'pending' && displayedGaugeData.length === 0 && ( <tr><td colSpan={13 + Math.max(1, forecastDates.length)} style={{textAlign: 'center', fontStyle: 'italic', padding: '1rem'}}> {activeTab === 'route' ? 'Selecteer een geldig Rijn/Waal traject of geen data beschikbaar voor traject.' : (Object.keys(gaugeApiData).length === 0 ? 'Geen API data geladen.' : 'Geen data beschikbaar voor deze weergave.')} </td></tr> )}
+                                        {dataStatus.status !== 'pending' && displayedGaugeData.length === 0 && ( <tr><td colSpan={13 + Math.max(1, forecastDates.length)} style={{textAlign: 'center', fontStyle: 'italic', padding: '1rem'}}> {activeTab === 'route' ? 'Selecteer een geldig Rijn/Waal traject of geen data beschikbaar voor traject.' : (Object.keys(gaugeApiData).length === 0 ? 'Geen API data geladen.' : 'Geen data gevonden voor de geselecteerde filter.')} </td></tr> )}
                                         {/* Table Body Rows */}
                                         {displayedGaugeData.map(gauge => {
                                             const apiData = gauge.apiData; if (!apiData) return null;
@@ -1167,7 +1227,7 @@
                 {/* Footer */}
                 <footer>
                      <div>Data API per: {lastUpdated ? lastUpdated.toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' }) : 'Nog niet geladen'}</div>
-                    <div>RDD Calculator v6.3 - Planner Enhancements</div> {/* Updated version */}
+                    <div>RDD Calculator &copy; FilipJFZ</div>
                 </footer>
             </div> // End .container
         );
