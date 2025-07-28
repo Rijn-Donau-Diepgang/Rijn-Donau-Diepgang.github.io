@@ -1300,23 +1300,24 @@
                     correctionOp: 0,
                     correctionAf: 0
                 },
+
                 {
-                    name: 'Oberndorf',
-                    km: 2397.4,
+                    name: 'Kelheim',
+                    km: 2409.7,
                     river: 'Donau',
-                    streckenAbschnitt: '2400-XXXX',
-                    giw: 170, // RNW
+                    streckenAbschnitt: '2415-2399',
+                    giw: 250, // RNW
                     depthAtGiw: 290, // TuRNW
                     officialSafetyMargin: 30,
                     correctionOp: 0,
                     correctionAf: 0
                 },
                 {
-                    name: 'Kelheim',
-                    km: 2409.7,
+                    name: 'Oberndorf',
+                    km: 2397.4,
                     river: 'Donau',
-                    streckenAbschnitt: '2410-2381',
-                    giw: 250, // RNW
+                    streckenAbschnitt: '2397-2380',
+                    giw: 170, // RNW
                     depthAtGiw: 290, // TuRNW
                     officialSafetyMargin: 30,
                     correctionOp: 0,
@@ -1326,7 +1327,7 @@
                     name: 'Schwabelweis',
                     km: 2376.5,
                     river: 'Donau',
-                    streckenAbschnitt: '2380-XXXX',
+                    streckenAbschnitt: '2380-2355',
                     giw: 292, // RNW
                     depthAtGiw: 290, // TuRNW
                     officialSafetyMargin: 30,
@@ -1337,7 +1338,7 @@
                     name: 'Pfatter',
                     km: 2350.7,
                     river: 'Donau',
-                    streckenAbschnitt: '2360-XXXX',
+                    streckenAbschnitt: '2354-2330',
                     giw: 310, // RNW
                     depthAtGiw: 290, // TuRNW
                     officialSafetyMargin: 30,
@@ -1348,7 +1349,7 @@
                     name: 'Pfelling',
                     km: 2305.5,
                     river: 'Donau',
-                    streckenAbschnitt: '2320-2290',
+                    streckenAbschnitt: '2322-2290',
                     giw: 290, // RNW
                     depthAtGiw: 200, // TuRNW
                     officialSafetyMargin: 30,
@@ -1359,7 +1360,7 @@
                     name: 'Deggendorf',
                     km: 2284.4,
                     river: 'Donau',
-                    streckenAbschnitt: '2290-2260',
+                    streckenAbschnitt: '2290-2282',
                     giw: 290, // RNW
                     depthAtGiw: 200, // TuRNW
                     officialSafetyMargin: 30,
@@ -1370,7 +1371,7 @@
                     name: 'Hofkirchen',
                     km: 2256.9,
                     river: 'Donau',
-                    streckenAbschnitt: '2260-2240',
+                    streckenAbschnitt: '2282-2231',
                     giw: 207, // RNW
                     depthAtGiw: 200, // TuRNW
                     officialSafetyMargin: 30,
@@ -1381,7 +1382,7 @@
                     name: 'Passau Donau',
                     km: 2226.7,
                     river: 'Donau',
-                    streckenAbschnitt: '2230-XXXX',
+                    streckenAbschnitt: '2231-2204',
                     giw: 415, // RNW
                     depthAtGiw: 270, // TuRNW
                     officialSafetyMargin: 30,
@@ -2285,7 +2286,7 @@
                 return (numericLevel - safetyMargin + correction);
             } else if (gauge.customVuistregel !== undefined && gauge.customVuistregel !== null && !isNaN(Number(gauge.customVuistregel))) {
                 return (numericLevel + Number(gauge.customVuistregel) + correction);
-            } else if (['Rijn', 'IJssel'].includes(gauge.river) && gauge.giw !== 'N/A' && gauge.depthAtGiw !== 'N/A' && gauge.officialSafetyMargin !== 'N/A') {
+            } else if (['Rijn', 'IJssel', 'Donau'].includes(gauge.river) && gauge.giw !== 'N/A' && gauge.depthAtGiw !== 'N/A' && gauge.officialSafetyMargin !== 'N/A') {
                 const giw = Number(gauge.giw);
                 const depth = Number(gauge.depthAtGiw);
                 const safety = Number(gauge.officialSafetyMargin);
