@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Diepgang calculator &copy; FilipJFZ</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -971,7 +971,9 @@
     const MAX_FORECAST_DAYS = 8;
     const MAIN_ROUTE_RIVERS = ['Rijn', 'Waal'];
     const MGD_TRIGGER_GAUGES = ['Tiel', 'Nijmegen', 'Lobith'];
-    const MGD_TARGET_GAUGE_NAMES = ['Spijk - Woudrichem', 'Millingen tot Maas-Waalkanaal', 'Maas-Waalkanaal tot Amsterdam-Rijnkanaal', 'Amsterdam-Rijnkanaal tot Loevestein'];
+    //Millingen = spijk, Loevestijn = Woudrichem
+    const MGD_TARGET_GAUGE_NAMES = ['Spijk - Woudrichem', 'Millingen tot Maas-Waalkanaal', "Maas-Waalkan tot A'dam-Rijnkanaal", "Maas-Waalkanaal tot A'dam-Rijnkanaal", "Maas-Waalkanaal tot Amsterdam-Rijnkanaal", "A'dam-Rijnkanaal tot Loevestein", "Amsterdam-Rijnkanaal tot Loevestein", "Spijk - Maas-WaalKanaal", "Maas-Waalkanaal - A'dam-Rijnkanaal", "Maas-Waalkanaal - Amsterdam-Rijnkanaal", "A'dam-Rijnkanaal - Woudrichem", , "A'dam-Rijnkanaal - Woudrichem"];
+    const MGD_TARGET_GAUGE_KMS = ["857.7 - 952.5", "857.7 - 887.0", "887.0 - 913.3", "913.3 - 952.5"]
     const WEEKDAYS = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
 
     // --- Cookie Utilities ---
@@ -1083,7 +1085,8 @@
             return `https://waterinfo.rws.nl/publiek/waterhoogte/${urlCode}/details`;
         }
         const elwisNameBase = gauge.apiDataName || gauge.name || '';
-        const elwisName = elwisNameBase.toUpperCase().replace(/ /g, '_');
+        //const elwisName = elwisNameBase.toUpperCase().replace(/ /g, '_');
+        const elwisName = elwisNameBase.toUpperCase();
         if (elwisName) return `https://www.elwis.de/DE/dynamisch/Wasserstaende/Pegelvorhersage:${elwisName}`;
         return '#';
     }
@@ -1101,46 +1104,93 @@
     }
 
     // --- Date/Time Helper for Operational Time ---
-    function addOperationalTime(startDate, durationHours, operationalHoursPerDay, excludedDaysOfWeek) { /* ... */
-        if (operationalHoursPerDay <= 0) return startDate;
+    function addOperationalTime(startDate, durationHours, operationalHoursPerDay, excludedDaysOfWeek) {
+        if (operationalHoursPerDay <= 0 || durationHours <= 0) return startDate;
+
         let currentTime = new Date(startDate.getTime());
         let remainingDurationHours = durationHours;
-        const operationalStartHour = (operationalHoursPerDay === 24) ? 0 : 6;
-        const operationalEndHour = operationalStartHour + operationalHoursPerDay;
-        while (remainingDurationHours > 0.001) {
-            const currentDayOfWeek = currentTime.getDay();
-            if (excludedDaysOfWeek.includes(currentDayOfWeek)) {
+
+        const getOperationalWindow = (date, mode) => {
+            let startHour, endHour;
+            const dayOfWeek = date.getDay();
+
+            if (excludedDaysOfWeek.includes(dayOfWeek)) {
+                return { start: null, end: null }; // Not an operational day
+            }
+
+            switch (mode) {
+                case 'A1':
+                    startHour = 6;
+                    // Special rule: if the journey *starts* after 20:00, the window extends to 22:00
+                    // We check this by comparing the initial startDate, not the iterating currentTime
+                    const startOfDayForStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                    const startOfDayForCurrentDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+                    if (startOfDayForStartDate.getTime() === startOfDayForCurrentDate.getTime() && startDate.getHours() >= 20) {
+                         endHour = 22;
+                    } else {
+                         endHour = 20;
+                    }
+                    break;
+                case 'A2':
+                    startHour = 5;
+                    endHour = 23;
+                    break;
+                case 'B':
+                default: // Default to 24-hour operation
+                    startHour = 0;
+                    endHour = 24;
+                    break;
+            }
+            const startTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), startHour, 0, 0);
+            const endTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), endHour, 0, 0);
+            return { start: startTime, end: endTime };
+        };
+
+        // Determine operational mode from the hours per day
+        let mode = 'B'; // Default
+        if (operationalHoursPerDay === 14) mode = 'A1';
+        if (operationalHoursPerDay === 18) mode = 'A2';
+        // Note: 'Custom' mode will fall through to default B (24h) as it's not explicitly defined with start/end times.
+        // This could be enhanced later if needed.
+
+        while (remainingDurationHours > 1e-6) { // Use a small epsilon for float comparison
+            let { start: opStart, end: opEnd } = getOperationalWindow(currentTime, mode);
+
+            // If we are on a non-operational day, jump to the start of the next day
+            if (!opStart) {
                 currentTime.setDate(currentTime.getDate() + 1);
-                currentTime.setHours(operationalStartHour, 0, 0, 0);
+                currentTime.setHours(0, 0, 0, 0);
                 continue;
             }
-            const currentHour = currentTime.getHours();
-            const currentMinute = currentTime.getMinutes();
-            const currentTimeFractional = currentHour + currentMinute / 60;
-            if (currentTimeFractional < operationalStartHour) {
-                currentTime.setHours(operationalStartHour, 0, 0, 0);
-                continue;
+
+            // If current time is before the window starts, jump to the start of the window
+            if (currentTime < opStart) {
+                currentTime = new Date(opStart.getTime());
             }
-            if (operationalHoursPerDay < 24 && currentTimeFractional >= operationalEndHour) {
+
+            // If current time is after the window ends, jump to the start of the next day's window
+            if (currentTime >= opEnd) {
                 currentTime.setDate(currentTime.getDate() + 1);
-                currentTime.setHours(operationalStartHour, 0, 0, 0);
+                let { start: nextOpStart } = getOperationalWindow(currentTime, mode);
+                while(!nextOpStart) { // Keep skipping non-operational days
+                    currentTime.setDate(currentTime.getDate() + 1);
+                    nextOpStart = getOperationalWindow(currentTime, mode);
+                }
+                currentTime = new Date(nextOpStart.getTime());
                 continue;
             }
-            let hoursLeftToday = operationalHoursPerDay < 24 ? operationalEndHour - currentTimeFractional : 24 - currentTimeFractional;
-            if (operationalHoursPerDay === 24 && hoursLeftToday < 0.001) {
-                hoursLeftToday = 24;
-            }
-            const timeToConsume = Math.min(remainingDurationHours, hoursLeftToday);
-            currentTime.setTime(currentTime.getTime() + timeToConsume * 60 * 60 * 1000);
+
+            // Calculate available time in the current window
+            const availableMs = opEnd.getTime() - currentTime.getTime();
+            const availableHours = availableMs / (1000 * 60 * 60);
+
+            const timeToConsume = Math.min(remainingDurationHours, availableHours);
+
+            currentTime.setTime(currentTime.getTime() + timeToConsume * 1000 * 60 * 60);
             remainingDurationHours -= timeToConsume;
-            if (remainingDurationHours < 0.001) {
-                break;
-            }
-            if (operationalHoursPerDay < 24 && Math.abs(currentTime.getHours() + currentTime.getMinutes() / 60 - operationalEndHour) < 0.01) {
-                currentTime.setDate(currentTime.getDate() + 1);
-                currentTime.setHours(operationalStartHour, 0, 0, 0);
-            }
         }
+
         return currentTime;
     }
 
@@ -1218,6 +1268,58 @@
         return null;
     }
 
+    // --- NEW: Calculate Forecast Uncertainty based on river and publication time ---
+    function calculateForecastUncertainty(gauge, forecastDateStr, now) {
+        if (!gauge || !gauge.river || !forecastDateStr || !now) {
+            return null;
+        }
+
+        let publishHour;
+        let thresholdHours;
+
+        // 1. Determine rules based on the river
+        switch (gauge.river) {
+            case 'Rijn':
+            case 'Waal':
+            case 'Pannerdens Kanaal':
+            case 'IJssel':
+                publishHour = 7;
+                thresholdHours = 48;
+                break;
+            case 'Donau':
+                publishHour = 5;
+                thresholdHours = 24;
+                break;
+            default:
+                return null; // No uncertainty rules for this river
+        }
+
+        // 2. Determine the most recent forecast publication time
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), publishHour, 0, 0);
+        let mostRecentPublishTime = today;
+
+        if (now < today) {
+            // If it's before today's publication time, the latest forecast is from yesterday
+            mostRecentPublishTime.setDate(mostRecentPublishTime.getDate() - 1);
+        }
+
+        // 3. Calculate the difference in hours from publication to the forecast date
+        const forecastDate = new Date(forecastDateStr + 'T12:00:00Z'); // Use noon for a stable comparison point
+        const diffMs = forecastDate.getTime() - mostRecentPublishTime.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+
+        if (diffHours < 0) {
+            return null; // Forecast is for a date before the last publication, unlikely but safe to handle
+        }
+
+        // 4. Apply the threshold
+        if (diffHours <= thresholdHours) {
+            return 10; // ±10 cm
+        } else {
+            return 20; // ±20 cm
+        }
+    }
+
     // --- React Component ---
     function RhineDraftCalculator() {
         // --- State ---
@@ -1234,7 +1336,12 @@
         const [autoRefresh, setAutoRefresh] = useState(true);
         const [nextRefreshTime, setNextRefreshTime] = useState(null);
         const refreshButtonRef = useRef(null);
-        const [journey, setJourney] = useState(() => getCookie('rhineDraftJourney') || {start: 914, end: 0});
+        // --- REPLACE THIS STATE ---
+        const [journey, setJourney] = useState(() => getCookie('riverJourneys') || {
+            'Rijn/Waal': {start: 914, end: 0},
+            'Donau': {start: 2410, end: 2227},
+            'IJssel': {start: 981, end: 878},
+        });
         const [activeTab, setActiveTab] = useState('route');
         const [displayMode, setDisplayMode] = useState('draft');
         const [showUncertainty, setShowUncertainty] = useState(() => getCookie('rhineShowUncertainty') ?? false);
@@ -1247,9 +1354,11 @@
             const minutes = String(now.getMinutes()).padStart(2, '0');
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }, []);
+
+
         const [routePlanResult, setRoutePlanResult] = useState(null);
         const [routePlanStatus, setRoutePlanStatus] = useState('idle');
-
+        const [selectedRiver, setSelectedRiver] = useState(() => getCookie('selectedRiverContext') || 'Rijn/Waal');
         // NEW: State for the river filter on the 'All Data' tab
         const [riverFilter, setRiverFilter] = useState('all');
 
@@ -1291,19 +1400,20 @@
                 // --- Donau (Danube) Gauges ---
                 {
                     name: 'Ingolstadt',
-                    km: 2458.3,
+                    apiDataName: 'Ingolstadt Luitpoldstrasse', // <-- FIX: Add official name for API/URL
+                    km: 2458,
                     river: 'Donau',
                     streckenAbschnitt: '2458-XXXX',
-                    giw: 'N/A', // RNW equivalent
-                    depthAtGiw: 'N/A', // TuRNW
+                    giw: 'N/A',
+                    depthAtGiw: 'N/A',
                     officialSafetyMargin: 'N/A',
                     correctionOp: 0,
                     correctionAf: 0
                 },
-
                 {
                     name: 'Kelheim',
-                    km: 2409.7,
+                    apiDataName: 'Kelheim', // <-- FIX: Add official name for API/URL
+                    km: 2410,
                     river: 'Donau',
                     streckenAbschnitt: '2415-2399',
                     giw: 250, // RNW
@@ -1314,7 +1424,7 @@
                 },
                 {
                     name: 'Oberndorf',
-                    km: 2397.4,
+                    km: 2397,
                     river: 'Donau',
                     streckenAbschnitt: '2397-2380',
                     giw: 170, // RNW
@@ -1325,7 +1435,7 @@
                 },
                 {
                     name: 'Schwabelweis',
-                    km: 2376.5,
+                    km: 2377,
                     river: 'Donau',
                     streckenAbschnitt: '2380-2355',
                     giw: 292, // RNW
@@ -1336,7 +1446,7 @@
                 },
                 {
                     name: 'Pfatter',
-                    km: 2350.7,
+                    km: 2351,
                     river: 'Donau',
                     streckenAbschnitt: '2354-2330',
                     giw: 310, // RNW
@@ -1347,7 +1457,7 @@
                 },
                 {
                     name: 'Pfelling',
-                    km: 2305.5,
+                    km: 2306,
                     river: 'Donau',
                     streckenAbschnitt: '2322-2290',
                     giw: 290, // RNW
@@ -1358,10 +1468,10 @@
                 },
                 {
                     name: 'Deggendorf',
-                    km: 2284.4,
+                    km: 2284,
                     river: 'Donau',
                     streckenAbschnitt: '2290-2282',
-                    giw: 290, // RNW
+                    giw: 210, // RNW
                     depthAtGiw: 200, // TuRNW
                     officialSafetyMargin: 30,
                     correctionOp: 0,
@@ -1369,7 +1479,7 @@
                 },
                 {
                     name: 'Hofkirchen',
-                    km: 2256.9,
+                    km: 2257,
                     river: 'Donau',
                     streckenAbschnitt: '2282-2231',
                     giw: 207, // RNW
@@ -1380,7 +1490,7 @@
                 },
                 {
                     name: 'Passau Donau',
-                    km: 2226.7,
+                    km: 2227,
                     river: 'Donau',
                     streckenAbschnitt: '2231-2204',
                     giw: 415, // RNW
@@ -1701,110 +1811,122 @@
                 },
                 {
                     name: 'Spijk - Woudrichem',
-                    km: 931,
+                    km: 905,
                     river: 'MGD',
-                    streckenAbschnitt: 'Waal km 858-953',
+                    streckenAbschnitt: 'Waal km 857.7-952.5',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
                     correctionOp: 0,
                     correctionAf: 0,
-                    isMGDTarget: true
-                }, // Mark as MGD target
+                    isMGDTarget: true,
+                    mgdKmRange: '857.7-952.5',
+                    alternativeNames: ['Spijk - Loevestein', 'Millingen - Woudrichem', 'Millingen - Loevestein']
+                },
                 {
                     name: 'Millingen tot Maas-Waalkanaal',
-                    km: 867,
+                    km: 872,
                     river: 'MGD',
-                    streckenAbschnitt: 'Waal (deeltraject)',
+                    streckenAbschnitt: 'Waal km 857.7-887.0',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
                     correctionOp: 0,
                     correctionAf: 0,
-                    isMGDTarget: true
+                    isMGDTarget: true,
+                    mgdKmRange: '857.7-887.0',
+                    alternativeNames: ['Spijk - Maas-WaalKanaal', 'Millingen - Maas-Waalkanaal']
                 },
                 {
                     name: 'Maas-Waalkanaal tot Amsterdam-Rijnkanaal',
-                    km: 895,
+                    km: 900,
                     river: 'MGD',
-                    streckenAbschnitt: 'Waal (deeltraject)',
+                    streckenAbschnitt: 'Waal km 887.0-913.3',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
                     correctionOp: 0,
                     correctionAf: 0,
-                    isMGDTarget: true
+                    isMGDTarget: true,
+                    mgdKmRange: '887.0-913.3',
+                    alternativeNames: ['Maas-Waalkan tot A\'dam-Rijnkanaal', 'Maas-Waalkanaal tot A\'dam-Rijnkanaal', 'Maas-Waalkanaal - A\'dam-Rijnkanaal', 'Maas-Waalkanaal - Amsterdam-Rijnkanaal']
                 },
                 {
                     name: 'Amsterdam-Rijnkanaal tot Loevestein',
-                    km: 925,
+                    km: 933,
                     river: 'MGD',
-                    streckenAbschnitt: 'Waal (deeltraject)',
+                    streckenAbschnitt: 'Waal km 913.3-952.5',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
                     correctionOp: 0,
                     correctionAf: 0,
-                    isMGDTarget: true
+                    isMGDTarget: true,
+                    mgdKmRange: '913.3-952.5',
+                    alternativeNames: ['A\'dam-Rijnkanaal tot Loevestein', 'A\'dam-Rijnkanaal tot Woudrichem', 'A\'dam-Rijnkanaal - Woudrichem', 'Amsterdam-Rijnkanaal - Loevestein']
                 },
                 {
                     name: 'Pannerdensche Kop - IJsselkop',
-                    km: 878,
+                    km: 872,
                     river: 'MGD',
-                    streckenAbschnitt: 'Pannerdensch Kanaal',
+                    streckenAbschnitt: 'Pannerdensch Kanaal km 867.5-878.6',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
                     correctionOp: 0,
-                    correctionAf: 0
+                    correctionAf: 0,
+                    alternativeNames: ['Pannerdens Kop - IJsselkop']
                 },
                 {
                     name: 'IJsselkop - Driel',
-                    km: 884,
+                    km: 881,
                     river: 'MGD',
-                    streckenAbschnitt: 'Nederrijn km 878-884',
+                    streckenAbschnitt: 'Nederrijn km 878.6-891.0',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
                     correctionOp: 0,
                     correctionAf: 0
                 },
                 {
                     name: 'Driel - Heteren',
-                    km: 888,
+                    km: 893,
                     river: 'MGD',
-                    streckenAbschnitt: 'Nederrijn km 884-888',
+                    streckenAbschnitt: 'Nederrijn km 891.0-895.0',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
                     correctionOp: 0,
                     correctionAf: 0
                 },
                 {
-                    name: 'Heteren - A\'dam-Rijnkanaal',
-                    km: 905,
+                    name: 'Heteren - Amsterdam-Rijnkanaal',
+                    km: 913,
                     river: 'MGD',
-                    streckenAbschnitt: 'Nederrijn km 888-905',
+                    streckenAbschnitt: 'Nederrijn km 895.0-929.0',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
                     correctionOp: 0,
-                    correctionAf: 0
+                    correctionAf: 0,
+                    alternativeNames: ['Heteren - A\'dam-Rijnkanaal']
                 },
                 {
-                    name: 'A\'dam-Rijnkanaal - Hagestein',
-                    km: 922,
+                    name: 'Amsterdam-Rijnkanaal - Hagestein',
+                    km: 938,
                     river: 'MGD',
-                    streckenAbschnitt: 'Lek km 905-922',
+                    streckenAbschnitt: 'Lek km 929.0-947.0',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
                     correctionOp: 0,
-                    correctionAf: 0
+                    correctionAf: 0,
+                    alternativeNames: ['A\'dam-Rijnkanaal - Hagestein']
                 },
                 {
                     name: 'IJsselkop - Twenthekanaal',
-                    km: 921,
+                    km: 900,
                     river: 'MGD',
-                    streckenAbschnitt: 'IJssel km 878-921',
+                    streckenAbschnitt: 'IJssel km 878.6-931.0',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
                     correctionOp: 0,
-                    correctionAf: 0
+                    correctionAf: 0,
                 },
                 {
                     name: 'Twenthekanaal - Zwolle-IJsselkanaal',
-                    km: 981,
+                    km: 956,
                     river: 'MGD',
-                    streckenAbschnitt: 'IJssel km 921-981',
+                    streckenAbschnitt: 'IJssel km 931.0-981.0',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
                     correctionOp: 0,
-                    correctionAf: 0
+                    correctionAf: 0,
+
                 },
                 {
                     name: 'Uitvaartdiepte Oostsluis Weurt',
-                    km: 886,
+                    km: 887,
                     river: 'MGD',
                     streckenAbschnitt: 'Oostsluis Weurt',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
@@ -1813,7 +1935,7 @@
                 },
                 {
                     name: 'Uitvaartdiepte Westsluis Weurt',
-                    km: 886.1,
+                    km: 887.1,
                     river: 'MGD',
                     streckenAbschnitt: 'Westsluis Weurt',
                     officialSafetyMargin: DEFAULT_DEPTH_SAFETY_MARGIN,
@@ -2141,6 +2263,9 @@
         useEffect(() => {
             setCookie('rhineDraftCorrections', customCorrections);
         }, [customCorrections]);
+        useEffect(() => {
+            setCookie('selectedRiverContext', selectedRiver); // <-- RENAME THIS
+        }, [selectedRiver]);
 
 
         // --- Event Handlers ---
@@ -2153,10 +2278,14 @@
             };
             setCustomCorrections(newCorrections);
         };
-        const handleJourneyChange = (type, value) => { /* ... */
-            const newJourney = {...journey, [type]: value ? parseInt(value, 10) : null};
-            setJourney(newJourney);
-            setCookie('rhineDraftJourney', newJourney);
+        const handleJourneyChange = (type, value) => {
+            const newJourneyForRiver = {
+                ...journey[selectedRiver],
+                [type]: value ? parseInt(value, 10) : null
+            };
+            const newJourneys = {...journey, [selectedRiver]: newJourneyForRiver};
+            setJourney(newJourneys);
+            setCookie('riverJourneys', newJourneys);
         };
         const handleRefresh = useCallback((force = true) => { /* ... */
             console.log("Manual refresh triggered.", `Force: ${force}`);
@@ -2209,22 +2338,33 @@
             handlePlannerSettingChange('startDate', formattedNow);
         };
 
-        // --- Calculations & Derived State ---
-        // Determine travel direction based on journey selection
+// Determine travel direction based on journey selection
         useEffect(() => {
-            if (journey.start !== null && journey.end !== null) {
-                setTravelDirection(journey.start < journey.end ? 'downstream' : 'upstream');
+            const currentJourney = journey[selectedRiver] || {start: null, end: null};
+            if (currentJourney.start !== null && currentJourney.end !== null) {
+                if (selectedRiver === 'Donau') {
+                    // On the Danube, a smaller KM is downstream
+                    setTravelDirection(currentJourney.start > currentJourney.end ? 'downstream' : 'upstream');
+                } else {
+                    // On other rivers, a larger KM is downstream
+                    setTravelDirection(currentJourney.start < currentJourney.end ? 'downstream' : 'upstream');
+                }
             }
-        }, [journey]);
+        }, [journey, selectedRiver]);
 
-        // Check if a gauge KM is within the selected journey range
-        const isInJourneyKmRange = useCallback((gaugeKm) => { /* ... */
-            if (journey.start === null || journey.end === null || gaugeKm === null || gaugeKm === undefined) return false;
-            const startKm = Number(journey.start);
-            const endKm = Number(journey.end);
-            if (isNaN(startKm) || isNaN(endKm)) return false;
+        // Check if a gauge KM is within the selected journey range for the CURRENT river
+        const isInJourneyKmRange = useCallback((gaugeKm) => {
+            const currentJourney = journey[selectedRiver];
+            if (!currentJourney || currentJourney.start === null || currentJourney.end === null || gaugeKm === null || gaugeKm === undefined) {
+                return false;
+            }
+            const startKm = Number(currentJourney.start);
+            const endKm = Number(currentJourney.end);
+            if (isNaN(startKm) || isNaN(endKm)) {
+                return false;
+            }
             return gaugeKm >= Math.min(startKm, endKm) && gaugeKm <= Math.max(startKm, endKm);
-        }, [journey]);
+        }, [journey, selectedRiver]); // <-- Add selectedRiver to the dependency array
 
         // MODIFIED: Filter gauge data for the "Max Draft" / "All" tabs, now with river filter logic
         const displayedGaugeDataMaxDraft = useMemo(() => {
@@ -2238,66 +2378,67 @@
 
                 // Logic for "Max Diepgang (Route)" tab
                 if (activeTab === 'route') {
-                    return staticGauge.isMainRoute && isInJourneyKmRange(staticGauge.km);
+                    const riverMatch = (selectedRiver === 'Rijn/Waal') ? staticGauge.isMainRoute : (staticGauge.river === selectedRiver);
+                    return riverMatch && isInJourneyKmRange(staticGauge.km);
                 }
 
-                // Logic for "Alle Data" tab, including the new river filter
+// Logic for "Alle Data" tab, now using the main river selector
                 if (activeTab === 'all') {
-                    if (riverFilter === 'all') {
+                    if (selectedRiver === 'all') {
                         return true; // Show all gauges with data
                     }
-                    if (riverFilter === 'Rijn/Waal') {
+                    if (selectedRiver === 'Rijn/Waal') {
                         // Show Rijn/Waal gauges AND the specific Spijk-Woudrichem MGD gauge
                         return staticGauge.river === 'Rijn' || staticGauge.river === 'Waal' || staticGauge.name === 'Spijk - Woudrichem';
                     }
-
-                    if (riverFilter === 'IJssel') {
-                        const ijsselMgdNames = [
-                            'IJsselkop - Twenthekanaal',
-                            'Twenthekanaal - Zwolle-IJsselkanaal'
-                        ];
-                        // Show IJssel gauges AND the specific IJssel-related MGD gauges
-                        return staticGauge.river === 'IJssel' || ijsselMgdNames.includes(staticGauge.name);
-                    }
-                    // For any other selection (e.g., 'MGD', 'Pannerdens Kanaal'), match the river name exactly
-                    return staticGauge.river === riverFilter;
+                    // For any other selection, match the river name exactly
+                    return staticGauge.river === selectedRiver;
                 }
 
                 return false; // Default case
             }).map(staticGauge => ({...staticGauge, apiData: gaugeApiData[staticGauge.name]}));
 
             return data;
-        }, [allGaugeStaticData, gaugeApiData, activeTab, isInJourneyKmRange, riverFilter]); // MODIFIED: Added riverFilter dependency
 
+// OLD, INCORRECT ARRAY
+        }, [allGaugeStaticData, gaugeApiData, activeTab, isInJourneyKmRange, riverFilter]);
 
         // Determine which data to display based on the active tab
         const displayedGaugeData = activeTab === 'planner' ? [] : displayedGaugeDataMaxDraft;
 
-        // Calculate draft based on gauge properties, water level, and direction
-        const calculateDraft = useCallback((gauge, waterLevel, direction) => { /* ... unchanged ... */
+        const calculateDraft = useCallback((gauge, waterLevel, direction) => {
             if (!gauge || waterLevel === null || waterLevel === undefined || isNaN(Number(waterLevel))) return null;
             if (gauge.name === "Konstanz") return null;
+
+            let calculatedDraft = null; // Calculate draft first, then apply constraints
             const numericLevel = Number(waterLevel);
             const effectiveDirection = direction || travelDirection;
             const correction = customCorrections[effectiveDirection]?.[gauge.name] || 0;
+
             if (gauge.river === 'MGD') {
                 const safetyMargin = gauge.officialSafetyMargin !== 'N/A' ? Number(gauge.officialSafetyMargin) : DEFAULT_DEPTH_SAFETY_MARGIN;
-                if (isNaN(safetyMargin)) return null;
-                return (numericLevel - safetyMargin + correction);
+                if (!isNaN(safetyMargin)) {
+                    calculatedDraft = (numericLevel - safetyMargin + correction);
+                }
             } else if (gauge.customVuistregel !== undefined && gauge.customVuistregel !== null && !isNaN(Number(gauge.customVuistregel))) {
-                return (numericLevel + Number(gauge.customVuistregel) + correction);
+                calculatedDraft = (numericLevel + Number(gauge.customVuistregel) + correction);
             } else if (['Rijn', 'IJssel', 'Donau'].includes(gauge.river) && gauge.giw !== 'N/A' && gauge.depthAtGiw !== 'N/A' && gauge.officialSafetyMargin !== 'N/A') {
                 const giw = Number(gauge.giw);
                 const depth = Number(gauge.depthAtGiw);
                 const safety = Number(gauge.officialSafetyMargin);
                 if (!isNaN(giw) && !isNaN(depth) && !isNaN(safety)) {
-                    return (numericLevel - giw + depth - safety + correction);
-                } else {
-                    return null;
+                    calculatedDraft = (numericLevel - giw + depth - safety + correction);
                 }
             }
-            return null;
+
+            // --- NEW: Apply Danube draft limit ---
+            if (gauge.river === 'Donau' && calculatedDraft !== null) {
+                return Math.min(calculatedDraft, 270);
+            }
+
+            return calculatedDraft;
         }, [customCorrections, travelDirection]);
+
 
         // Calculate the official rule of thumb value for display
         const calculateOfficialRuleOfThumb = useCallback((gauge) => { /* ... */
@@ -2311,10 +2452,19 @@
         }, []);
 
         // Calculate the custom/corrected rule of thumb value for display
-        const calculateCustomRuleOfThumbDisplay = useCallback((gauge, direction) => { /* ... unchanged ... */
-            if (!gauge || gauge.river === 'MGD' || gauge.name === "Konstanz") return "N/A";
+        const calculateCustomRuleOfThumbDisplay = useCallback((gauge, direction) => {
+            if (!gauge || gauge.name === "Konstanz") return "N/A"; // <-- FIX: Removed MGD check from here
+
             const effectiveDirection = direction || travelDirection;
             const correction = customCorrections[effectiveDirection]?.[gauge.name] || 0;
+
+            // <-- FIX: Added specific logic for MGD gauges
+            if (gauge.river === 'MGD') {
+                // For MGD, the "custom rule" is simply the correction value itself.
+                return correction.toFixed(0);
+            }
+
+            // Existing logic for all other rivers remains the same
             let baseRule = null;
             if (gauge.customVuistregel !== undefined && gauge.customVuistregel !== null && !isNaN(Number(gauge.customVuistregel))) {
                 baseRule = Number(gauge.customVuistregel);
@@ -2324,9 +2474,11 @@
                     baseRule = Number(officialRule);
                 }
             }
+
             if (baseRule !== null) {
                 return (baseRule + correction).toFixed(0);
             }
+
             return "N/A";
         }, [customCorrections, travelDirection, calculateOfficialRuleOfThumb]);
 
@@ -2488,15 +2640,15 @@
                                 uncertaintyText = '(Bereik N/A)';
                             }
                         } else if (forecastLevelForCrit !== null) {
-                            const daysAhead = diffDays(todayStr, dateStr);
-                            if (!isNaN(daysAhead) && daysAhead > 0) {
-                                const elwisUncertainty = daysAhead <= 2 ? 10 : 20;
-                                const draftLow = calculateDraft(criticalGauge, forecastLevelForCrit - elwisUncertainty, travelDirection);
-                                const draftHigh = calculateDraft(criticalGauge, forecastLevelForCrit + elwisUncertainty, travelDirection);
+                            const now = new Date();
+                            const uncertaintyCm = calculateForecastUncertainty(criticalGauge, dateStr, now);
+                            if (uncertaintyCm !== null) {
+                                const draftLow = calculateDraft(criticalGauge, forecastLevelForCrit - uncertaintyCm, travelDirection);
+                                const draftHigh = calculateDraft(criticalGauge, forecastLevelForCrit + uncertaintyCm, travelDirection);
                                 if (draftLow !== null && draftHigh !== null && !isNaN(draftLow) && !isNaN(draftHigh)) {
                                     uncertaintyText = `(${Math.min(draftLow, draftHigh).toFixed(0)}–${Math.max(draftLow, draftHigh).toFixed(0)} cm*)`;
                                 } else {
-                                    uncertaintyText = `(±${elwisUncertainty} cm*)`;
+                                    uncertaintyText = `(±${uncertaintyCm} cm*)`;
                                 }
                             }
                         }
@@ -2549,24 +2701,40 @@
                         if (!operationalHours || operationalHours <= 0 || operationalHours > 24) throw new Error("Ongeldige custom uren (1-24).");
                         break;
                     default:
-                        throw new Error("Ongeldige operatie modus.");
+                        throw new Error("Ongeldig systeem .");
                 }
                 if (plannerSettings.customSegmentKm > 0 && (!plannerSettings.customSegmentSpeed || plannerSettings.customSegmentSpeed <= 0)) {
                     throw new Error("Snelheid voor extra trajectdeel moet groter dan 0 zijn als afstand is ingevuld.");
                 }
 
-                // 2. Determine Route and Direction
-                const startKm = Number(journey.start);
-                const endKm = Number(journey.end);
-                const planDirection = startKm < endKm ? 'downstream' : 'upstream';
+                // 2. Determine Route and Direction (with Danube logic)
+                const startKm = Number(journey[selectedRiver]?.start); // <-- FIX HERE
+                const endKm = Number(journey[selectedRiver]?.end);     // <-- FIX HERE
+                let planDirection;
+                if (selectedRiver === 'Donau') {
+                    planDirection = startKm > endKm ? 'downstream' : 'upstream';
+                } else {
+                    planDirection = startKm < endKm ? 'downstream' : 'upstream';
+                }
                 const speed = planDirection === 'downstream' ? plannerSettings.speedDownstream : plannerSettings.speedUpstream;
 
                 // 3. Get Gauges on Route & Sort
                 const routeGauges = allGaugeStaticData
-                    .filter(g => g.isMainRoute && isInJourneyKmRange(g.km))
+                    .filter(g => {
+                        const riverMatch = (selectedRiver === 'Rijn/Waal') ? g.isMainRoute : (g.river === selectedRiver);
+                        return riverMatch && isInJourneyKmRange(g.km);
+                    })
                     .map(g => ({...g, apiData: gaugeApiData[g.name]}))
-                    .sort((a, b) => planDirection === 'downstream' ? (a.km - b.km) : (b.km - a.km));
+                    .sort((a, b) => {
+                        // Sorting is based on travel direction, which is now correctly calculated
+                        if (planDirection === 'downstream') {
+                            return selectedRiver === 'Donau' ? b.km - a.km : a.km - b.km;
+                        } else { // upstream
+                            return selectedRiver === 'Donau' ? a.km - b.km : b.km - a.km;
+                        }
+                    });
                 if (routeGauges.length === 0) throw new Error("Geen peilingen gevonden op het geselecteerde traject.");
+
 
                 // 4. Initialize variables for calculation loop
                 const intermediatePoints = [];
@@ -2652,13 +2820,13 @@
                             if (draftLow !== null && draftHigh !== null && !isNaN(draftLow) && !isNaN(draftHigh)) {
                                 draftUncertaintyText = `(${Math.min(draftLow, draftHigh).toFixed(0)}–${Math.max(draftLow, draftHigh).toFixed(0)} cm)`;
                             }
+
                         } else if (forecastSource === 'daily' && forecastLevel !== null) {
                             const etaDateStr = eta.toISOString().split('T')[0];
-                            const daysAhead = diffDays(todayStr, etaDateStr);
-                            if (!isNaN(daysAhead) && daysAhead > 0) {
-                                const elwisUncertainty = daysAhead <= 2 ? 10 : 20;
-                                const draftLow = calculateDraft(currentGauge, forecastLevel - elwisUncertainty, planDirection);
-                                const draftHigh = calculateDraft(currentGauge, forecastLevel + elwisUncertainty, planDirection);
+                            const uncertaintyCm = calculateForecastUncertainty(currentGauge, etaDateStr, now);
+                            if (uncertaintyCm !== null) {
+                                const draftLow = calculateDraft(currentGauge, forecastLevel - uncertaintyCm, planDirection);
+                                const draftHigh = calculateDraft(currentGauge, forecastLevel + uncertaintyCm, planDirection);
                                 if (draftLow !== null && draftHigh !== null && !isNaN(draftLow) && !isNaN(draftHigh)) {
                                     draftUncertaintyText = `(${Math.min(draftLow, draftHigh).toFixed(0)}–${Math.max(draftLow, draftHigh).toFixed(0)} cm*)`;
                                 }
@@ -2711,27 +2879,73 @@
 
                 // 7. MGD (MINST GEPEILDE DIEPTE) WARNING CHECK
                 let mgdWarning = null;
-                const isWaalRoute = routeGauges.some(g => MGD_TRIGGER_GAUGES.includes(g.name));
+                const warnings = [];
 
+                // --- A) Check for Waal MGD ---
+                const isWaalRoute = selectedRiver === 'Rijn/Waal';
                 if (isWaalRoute && overallMinDraft !== Infinity) {
-                    // Find the official MGD gauge data
                     const mgdStaticGauge = allGaugeStaticData.find(g => g.name === 'Spijk - Woudrichem');
                     const mgdApiData = gaugeApiData['Spijk - Woudrichem'];
-
                     if (mgdStaticGauge && mgdApiData && mgdApiData.currentLevel !== null) {
-                        // Calculate the maximum allowable draft based on the official MGD measurement
                         const allowableMgdDraft = calculateDraft(mgdStaticGauge, mgdApiData.currentLevel, planDirection);
-
-                        // FIX: Changed overallMaxDraft to the correct variable, overallMinDraft
                         if (allowableMgdDraft !== null && overallMinDraft > allowableMgdDraft) {
-                            // If our calculated draft exceeds the official MGD, create a warning message
-                            // FIX: Changed overallMaxDraft to the correct variable, overallMinDraft
-                            mgdWarning = `WAARSCHUWING: De berekende maximale diepgang van ${overallMinDraft.toFixed(0)} cm overschrijdt de huidige Minst Gepeilde Diepte Spijk-Woudrichem van ${allowableMgdDraft.toFixed(0)} cm. Varen met deze diepgang is niet overal in de gemarkeerde geul mogelijk en is op eigen risico.`;
-                            console.warn("MGD WARNING TRIGGERED:", mgdWarning);
+                            warnings.push(`De berekende diepgang van ${overallMinDraft.toFixed(0)} cm overschrijdt de MGD voor Spijk-Woudrichem (${allowableMgdDraft.toFixed(0)} cm).`);
                         }
                     } else {
-                        console.warn("MGD check skipped: 'Spijk - Woudrichem' data not available.");
+                        console.warn("Waal MGD check skipped: 'Spijk - Woudrichem' data not available.");
                     }
+                }
+
+               // --- B) Check for IJssel MGD ---
+                const isIJsselRoute = selectedRiver === 'IJssel';
+                if (isIJsselRoute && overallMinDraft !== Infinity) {
+                    const journeyStartKm = Number(journey[selectedRiver]?.start);
+                    const journeyEndKm = Number(journey[selectedRiver]?.end);
+
+                    const relevantIJsselMgdNames = [
+                        'IJsselkop - Twenthekanaal',
+                        'Twenthekanaal - Zwolle-IJsselkanaal'
+                    ];
+
+                    const ijsselMgdGauges = allGaugeStaticData.filter(g =>
+                        relevantIJsselMgdNames.includes(g.name)
+                    );
+
+                    ijsselMgdGauges.forEach(mgdGauge => {
+                        // --- NEW, MORE PRECISE KM PARSING ---
+                        // Expects format like "IJssel km 878.6-931.0"
+                        const mgdKmMatch = mgdGauge.streckenAbschnitt.match(/(\d+(\.\d+)?)-(\d+(\.\d+)?)/);
+                        if (mgdKmMatch && mgdKmMatch.length >= 4) {
+                            const mgdStartKm = parseFloat(mgdKmMatch[1]);
+                            const mgdEndKm = parseFloat(mgdKmMatch[3]);
+                        // --- END OF NEW PARSING ---
+
+                            if (!isNaN(mgdStartKm) && !isNaN(mgdEndKm)) {
+                                const journeyMin = Math.min(journeyStartKm, journeyEndKm);
+                                const journeyMax = Math.max(journeyStartKm, journeyEndKm);
+                                const mgdMin = Math.min(mgdStartKm, mgdEndKm);
+                                const mgdMax = Math.max(mgdStartKm, mgdEndKm);
+
+                                // Check for overlap between journey and MGD section
+                                if (Math.max(journeyMin, mgdMin) <= Math.min(journeyMax, mgdMax)) {
+                                    const mgdApiData = gaugeApiData[mgdGauge.name];
+                                    if (mgdApiData && mgdApiData.currentLevel !== null) {
+                                        const allowableMgdDraft = calculateDraft(mgdGauge, mgdApiData.currentLevel, planDirection);
+                                        if (allowableMgdDraft !== null && overallMinDraft > allowableMgdDraft) {
+                                            warnings.push(`De berekende diepgang van ${overallMinDraft.toFixed(0)} cm overschrijdt de MGD voor ${mgdGauge.name} (${allowableMgdDraft.toFixed(0)} cm).`);
+                                        }
+                                    } else {
+                                        console.warn(`IJssel MGD check for '${mgdGauge.name}' skipped: No API data.`);
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // --- C) Combine all warnings ---
+                if (warnings.length > 0) {
+                    mgdWarning = "WAARSCHUWING: " + warnings.join(' Varen met deze diepgang is op eigen risico. ');
                 }
 
                 // 8. Set Final Results for UI Display
@@ -2755,8 +2969,8 @@
                 setRoutePlanStatus('error');
             }
             // Added calculateCustomRuleOfThumbDisplay dependency
-        }, [plannerSettings, journey, allGaugeStaticData, gaugeApiData, isInJourneyKmRange, calculateDraft, showUncertainty, todayStr, customCorrections, calculateCustomRuleOfThumbDisplay]);
 
+        }, [plannerSettings, journey, selectedRiver, allGaugeStaticData, gaugeApiData, isInJourneyKmRange, calculateDraft, showUncertainty, todayStr, customCorrections, calculateCustomRuleOfThumbDisplay]);
         // --- Effect to recalculate plan when uncertainty toggle changes ---
         useEffect(() => {
             if (routePlanStatus === 'calculated' && routePlanResult && !routePlanResult.error) {
@@ -2780,7 +2994,7 @@
                 {/* Header Controls Area */}
                 <header className="controls-area">
                     <div className="controls-left">
-                        <h1 style={{margin: '0 0 0.5rem 0', fontSize: '1.5rem'}}>Rijn Diepgang Calculator</h1>
+                        <h1 style={{margin: '0 0 0.5rem 0', fontSize: '1.5rem'}}>Diepgang Calculator</h1>
                         {/* Auto-refresh checkbox */}
                         <div className="control-group"><label><input type="checkbox" checked={autoRefresh}
                                                                      onChange={(e) => setAutoRefresh(e.target.checked)}/>Auto-verversing
@@ -2793,35 +3007,46 @@
                             hour: '2-digit',
                             minute: '2-digit'
                         })}</span>} </div>
-                        {/* Journey Selection */}
-                        <div className="control-group"><label>Traject (Rijn/Waal):</label> <select
-                            value={journey.start ?? ''} onChange={(e) => handleJourneyChange('start', e.target.value)}>
-                            <option value="">Selecteer begin</option>
-                            {allGaugeStaticData.filter(g => g.isMainRoute).map(gauge => <option
-                                key={`start-${gauge.km}-${gauge.name}`}
-                                value={gauge.km}>{gauge.km} ({gauge.name})</option>)} </select> <span>tot</span> <select
-                            value={journey.end ?? ''} onChange={(e) => handleJourneyChange('end', e.target.value)}>
-                            <option value="">Selecteer einde</option>
-                            {allGaugeStaticData.filter(g => g.isMainRoute).map(gauge => <option
-                                key={`end-${gauge.km}-${gauge.name}`}
-                                value={gauge.km}>{gauge.km} ({gauge.name})</option>)} </select></div>
 
+                        {/* --- UNIFIED RIVER SELECTOR --- */}
+                        <div className="control-group">
+                            <label>Rivier:</label>
+                            <select value={selectedRiver} onChange={(e) => setSelectedRiver(e.target.value)}>
+                                {activeTab === 'all' && <option value="all">Alle Rivieren</option>}
+                                <option value="Rijn/Waal">Rijn/Waal</option>
+                                <option value="Donau">Donau</option>
+                                <option value="IJssel">IJssel</option>
+                            </select>
+                        </div>
 
+                        {/* --- FINAL Journey Selection --- */}
+                        <div className="control-group">
+                            <label>Traject:</label>
+                            <select value={journey[selectedRiver]?.start ?? ''}
+                                    onChange={(e) => handleJourneyChange('start', e.target.value)}>
+                                <option value="">Selecteer begin</option>
+                                {allGaugeStaticData
+                                    .filter(g => {
+                                        if (selectedRiver === 'Rijn/Waal') return g.isMainRoute;
+                                        return g.river === selectedRiver;
+                                    })
+                                    .map(gauge => <option key={`start-${gauge.km}-${gauge.name}`}
+                                                          value={gauge.km}>{gauge.km} ({gauge.name})</option>)}
+                            </select>
+                            <span>tot</span>
+                            <select value={journey[selectedRiver]?.end ?? ''}
+                                    onChange={(e) => handleJourneyChange('end', e.target.value)}>
+                                <option value="">Selecteer einde</option>
+                                {allGaugeStaticData
+                                    .filter(g => {
+                                        if (selectedRiver === 'Rijn/Waal') return g.isMainRoute;
+                                        return g.river === selectedRiver;
+                                    })
+                                    .map(gauge => <option key={`end-${gauge.km}-${gauge.name}`}
+                                                          value={gauge.km}>{gauge.km} ({gauge.name})</option>)}
+                            </select>
+                        </div>
 
-                        {/* NEW: River Filter for 'All' tab */}
-                        {activeTab === 'all' && (
-                            <div className="control-group">
-                                <label>Filter op Rivier:</label>
-                                <select value={riverFilter} onChange={(e) => setRiverFilter(e.target.value)}>
-                                    <option value="all">Alle Rivieren</option>
-                                    <option value="Rijn/Waal">Rijn/Waal</option>
-                                    <option value="Donau">Donau</option> {/* <-- ADD THIS LINE */}
-                                    <option value="IJssel">IJssel</option>
-                                    <option value="Pannerdens Kanaal">Pannerdens Kanaal</option>
-                                    <option value="MGD">Alle MGD</option>
-                                </select>
-                            </div>
-                        )}
 
                         {/* Display Mode & Uncertainty Toggle (only for main tabs) */}
                         {(activeTab === 'route' || activeTab === 'all') && (
@@ -2852,6 +3077,7 @@
                             })})` : ''} </div>
                         </div>
                     </div>
+
                     {/* Right Side Controls / Highlight Box (Contextual) */}
                     {activeTab === 'route' && (<div className="controls-right highlight-box">
                         <div style={{marginBottom: '6px', fontWeight: 'bold'}}>Kritieke diepgang
@@ -2904,7 +3130,8 @@
                                 onClick={() => handleTabChange('planner')}>Route Planner
                         </button>
                         <button className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
-                                onClick={() => handleTabChange('all')}>Alle Data ({displayedGaugeData.length})
+                                onClick={() => handleTabChange('all')}>Alle Data (incl. MGD)
+                            ({displayedGaugeData.length})
                         </button>
                     </div>
 
@@ -3069,11 +3296,12 @@
                                                                     if (lowVal !== null && !isNaN(lowVal) && highVal !== null && !isNaN(highVal)) {
                                                                         uncertaintyText = `(${Math.min(lowVal, highVal).toFixed(0)}–${Math.max(lowVal, highVal).toFixed(0)})`;
                                                                     } else uncertaintyText = '(Bereik N/A)';
+                                                                    // NEW CODE
                                                                 } else {
-                                                                    const daysAhead = diffDays(todayStr, dateStr);
-                                                                    if (!isNaN(daysAhead) && daysAhead > 0) {
-                                                                        const elwisUncertainty = daysAhead <= 2 ? 10 : 20;
-                                                                        uncertaintyText = `(±${elwisUncertainty} cm)`;
+                                                                    const now = new Date();
+                                                                    const uncertaintyCm = calculateForecastUncertainty(gauge, dateStr, now);
+                                                                    if (uncertaintyCm !== null) {
+                                                                        uncertaintyText = `(±${uncertaintyCm} cm)`;
                                                                     }
                                                                 }
                                                             }
@@ -3140,31 +3368,38 @@
                         </div> // End .table-area-padding
                     )}
 
+
                     {/* --- Route Planner Tab Content --- */}
                     {activeTab === 'planner' && (
                         <div className="table-area-padding">
                             {/* Planner Settings Form */}
                             <div className="planner-settings-group">
+
+
                                 <h3>Route Planner Instellingen</h3>
+
+
                                 {/* Start Date/Time */}
                                 <div className="control-group"><label htmlFor="startDate">Vertrek Datum/Tijd:</label>
                                     <input type="datetime-local" id="startDate" value={plannerSettings.startDate}
                                            onChange={(e) => handlePlannerSettingChange('startDate', e.target.value)}/>
                                     <button onClick={handleSetNow} className="now-button">Nu</button>
                                 </div>
+
                                 {/* Speeds */}
                                 <div className="control-group"><label htmlFor="speedDownstream">Snelheid Stroomaf
                                     (km/u):</label> <input type="number" id="speedDownstream" min="1"
                                                            value={plannerSettings.speedDownstream}
                                                            onChange={(e) => handlePlannerSettingChange('speedDownstream', Number(e.target.value))}/>
                                 </div>
+
                                 <div className="control-group"><label htmlFor="speedUpstream">Snelheid Stroomop
                                     (km/u):</label> <input type="number" id="speedUpstream" min="1"
                                                            value={plannerSettings.speedUpstream}
                                                            onChange={(e) => handlePlannerSettingChange('speedUpstream', Number(e.target.value))}/>
                                 </div>
                                 {/* Operational Mode */}
-                                <div className="control-group"><label htmlFor="operationalMode">Operatie Modus:</label>
+                                <div className="control-group"><label htmlFor="operationalMode">Systeem:</label>
                                     <select id="operationalMode" value={plannerSettings.operationalMode}
                                             onChange={handleOperationalModeChange}>
                                         <option value="A1">A1 (14 uur/dag)</option>
