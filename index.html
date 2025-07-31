@@ -1472,12 +1472,13 @@ function RhineDraftCalculator() {
         const [routePlanResult, setRoutePlanResult] = useState(null);
         const [routePlanStatus, setRoutePlanStatus] = useState('idle');
         const [selectedRiver, setSelectedRiver] = useState(() => getCookie('selectedRiverContext') || 'all');
-        const [plannerSettings, setPlannerSettings] = useState(() => {
+const [plannerSettings, setPlannerSettings] = useState(() => {
             const savedSettings = getCookie('rhinePlannerSettings');
             return {
                 startDate: savedSettings?.startDate || defaultStartDate,
                 speedDownstream: savedSettings?.speedDownstream || 20,
                 speedUpstream: savedSettings?.speedUpstream || 9,
+                speedCanal: savedSettings?.speedCanal || 7.1,
                 operationalMode: savedSettings?.operationalMode || 'A1',
                 customOperationalHours: savedSettings?.customOperationalHours || 14,
                 excludedDays: savedSettings?.excludedDays || [0, 6],
@@ -2351,7 +2352,7 @@ function RhineDraftCalculator() {
 
 
         // --- Route Planning Calculation Function ---
-        const calculateRoutePlan = useCallback(() => {
+const calculateRoutePlan = useCallback(() => {
             setRoutePlanStatus('calculating');
             setRoutePlanResult(null);
 
@@ -2419,7 +2420,10 @@ function RhineDraftCalculator() {
 
                         let travelHours = 0;
                         if (specialConnection) {
-                             travelHours = specialConnection.distance / specialConnection.speed;
+                             // MODIFIED: Use the adjustable canal speed from planner settings
+                             if (plannerSettings.speedCanal > 0) {
+                                 travelHours = specialConnection.distance / plannerSettings.speedCanal;
+                             }
                         } else {
                             const distance = Math.abs(currentGauge.km - prevGauge.km);
                             // Determine direction for this specific segment
@@ -3036,7 +3040,7 @@ function RhineDraftCalculator() {
                     {activeTab === 'planner' && (
                         <div className="table-area-padding">
                             {/* Planner Settings Form */}
-                            <div className="planner-settings-group">
+<div className="planner-settings-group">
 
 
                                 <h3>Route Planner Instellingen</h3>
@@ -3061,6 +3065,15 @@ function RhineDraftCalculator() {
                                                            value={plannerSettings.speedUpstream}
                                                            onChange={(e) => handlePlannerSettingChange('speedUpstream', Number(e.target.value))}/>
                                 </div>
+
+                                <div className="control-group"><label htmlFor="speedCanal">Gem. Snelheim Main/RMD (km/u):</label>
+                                    <input type="number" id="speedCanal" min="1" step="0.1"
+                                           style={{width: "70px"}}
+                                           value={plannerSettings.speedCanal}
+                                           onChange={(e) => handlePlannerSettingChange('speedCanal', Number(e.target.value))}/>
+                                    <span style={{fontSize: '0.8em', color: '#aaa', marginLeft: '0.5rem'}}>(Van Mainz tot Kelheim)</span>
+                                </div>
+
                                 {/* Operational Mode */}
                                 <div className="control-group"><label htmlFor="operationalMode">Systeem:</label>
                                     <select id="operationalMode" value={plannerSettings.operationalMode}
