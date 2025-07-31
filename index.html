@@ -1,13 +1,16 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>Diepgang calculator &copy; FilipJFZ</title>
+    <!-- I18N: Title will be set dynamically -->
+    <title>Diepgang calculator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.2/babel.min.js"></script>
     <style>
+        /* --- CSS is unchanged, so it is omitted for brevity --- */
         /* --- Base & Layout (Combined - Using Original Base) --- */
         html, body {
             margin: 0;
@@ -962,7 +965,613 @@
 <div id="root"></div>
 
 <script type="text/babel">
-    const {useState, useEffect, useCallback, useRef, useMemo} = React;
+    const {useState, useEffect, useCallback, useRef, useMemo, createContext, useContext} = React;
+
+    // --- I18N: START INTERNATIONALIZATION SETUP ---
+
+    // 1. Translations Object
+const translations = {
+    nl: {
+        appTitle: "Diepgang Calculator",
+        autoRefresh: "Auto-verversing",
+        nextRefresh: "Volgende",
+        language: "Taal",
+        contextRiver: "Context / Rivier",
+        allRivers: "Alle Rivieren",
+        journey: "Traject",
+        selectStart: "Selecteer begin",
+        selectEnd: "Selecteer einde",
+        to: "tot",
+        displayMode: "Weergave Modus",
+        displayModeDraft: "Diepgang",
+        displayModeLevel: "Waterstand (ruw)",
+        showUncertainty: "Toon Prognose Onzekerheid",
+        reloadData: "Data opnieuw laden",
+        loading: "Laden...",
+        apiTime: "API tijd",
+        initializing: "Initialiseren...",
+        loadingStatic: "Laden statische peiling definities...",
+        staticLoaded: "Statische data geladen.",
+        fetchingData: "Data ophalen van API...",
+        dataUpdated: "Data bijgewerkt ({successfulUpdates}/{apiGaugeCount} API bronnen)",
+        updateError: "Fout bij bijwerken ({errorCount} mislukt). Eerste: {firstError}",
+        updateWarning: "Deels bijgewerkt ({warningCount} waarschuwingen). Eerste: {firstWarning}",
+        loadError: "Fout bij laden: {errorMessage}",
+        criticalDraftTitle: "Kritieke diepgang ({direction})",
+        directionUp: "Op",
+        directionDown: "Af",
+        directionMixed: "op/af",
+        now: "Nu",
+        forecast: "Prognose",
+        noCriticalForecast: "Geen kritieke prognose gevonden",
+        noForecastsAvailable: "Geen prognose data beschikbaar",
+        loadingForecasts: "Prognoses laden...",
+        tabMaxDraft: "Max Diepgang (Traject)",
+        tabPlanner: "Route Planner",
+        tabAllData: "Alle Data",
+        headerRiver: "Rivier",
+        headerSection: "Strecke",
+        headerName: "Naam",
+        headerValue: "Waarde",
+        headerTrend: "Tendens",
+        headerOfficialRule: "Off. Vuist.",
+        headerCorrection: "Correctie (cm)",
+        headerUp: "Op",
+        headerDown: "Af",
+        headerAdjRule: "Aang. Vuist.",
+        headerActualDraft: "Diepgang",
+        headerActualLevel: "Waarde",
+        headerUnitCm: "(cm)",
+        headerUnitActual: "(Act., cm)",
+        headerForecastValue: "({mode}, cm)",
+        noForecasts: "Geen Prognoses",
+        noDataForSelection: "Selecteer een geldig traject of geen data beschikbaar voor traject.",
+        noApiData: "Geen API data geladen.",
+        noDataForFilter: "Geen data gevonden voor de geselecteerde filter.",
+        plannerSettingsTitle: "Route Planner Instellingen",
+        departureTime: "Vertrek Datum/Tijd",
+        speedDownstream: "Snelheid Stroomaf (km/u)",
+        speedUpstream: "Snelheid Stroomop (km/u)",
+        speedCanal: "Gem. Snelheid Main/RMD (km/u)",
+        speedCanalHint: "(Van Mainz tot Kelheim)",
+        system: "Systeem",
+        systemA1: "A1 (14 uur/dag)",
+        systemA2: "A2 (18 uur/dag)",
+        systemB: "B (24 uur/dag)",
+        systemCustom: "Custom",
+        hoursPerDay: "uur/dag",
+        excludedDays: "Uitgesloten Dagen",
+        showUncertaintyPlanner: "Toon Prognose Onzekerheid",
+        ifAvailable: "(Indien beschikbaar)",
+        calculateMaxDraft: "Bereken Maximale Diepgang",
+        calculating: "Berekenen...",
+        plannerResultTitle: "Route Plan Resultaat",
+        maxPossibleDraft: "Maximale Mogelijke Diepgang",
+        limitedBy: "Beperkt door",
+        mgdWarningText: "WAARSCHUWING: De berekende diepgang van {calculatedDraft} cm overschrijdt de MGD voor {mgdName} ({mgdDraft} cm). Varen met deze diepgang is op eigen risico.",
+        canalLimitReason: "Rijn-Main-Donaukanaal (max. 250 cm)",
+        routeDetails: "Route Details",
+        plannerHeaderKm: "KM",
+        plannerHeaderName: "Naam",
+        plannerHeaderEta: "ETA",
+        plannerHeaderForecastLevel: "Prog. Niveau (cm)",
+        plannerHeaderOffset: "Offset (cm)",
+        plannerHeaderAdjRule: "Aang. Vuist. (cm)",
+        plannerHeaderMaxDraft: "Max Diepgang (cm)",
+        plannerHeaderNotes: "Notities",
+        noRoutePoints: "Geen routepunten berekend (mogelijk geen prognoses beschikbaar voor ETA's).",
+        notesNoDataForEta: "Geen data voor ETA",
+        notesWeeklyForecast: "Weekpr.",
+        notesCurrentLevel: "Actueel",
+        footerApiDate: "Data API per",
+        notLoadedYet: "Nog niet geladen",
+        optionalSegment: "Optioneel Extra Trajectdeel",
+        extraDistance: "Extra Afstand (km)",
+        extraSpeed: "Snelheid Extra Deel (km/u)",
+        extraPosition: "Positie Extra Deel",
+        posAfter: "Na berekende route",
+        posBefore: "Vóór berekende route",
+        posHint: "(Voegt tijd toe aan begin/eind ETA)",
+        errorInvalidDate: "Ongeldige startdatum/-tijd.",
+        errorNoRoute: "Selecteer een begin- en eindpunt.",
+        errorInvalidSpeed: "Snelheden moeten groter dan 0 zijn.",
+        errorInvalidHours: "Ongeldige custom uren (1-24).",
+        errorNoPath: "Geen route gevonden tussen {start} en {end}. Controleer of er een logische verbinding bestaat.",
+        errorCustomSegmentSpeed: "Snelheid voor extra trajectdeel moet groter dan 0 zijn als afstand is ingevuld.",
+        calculationError: "Fout bij berekenen: {error}",
+    },
+    en: {
+        appTitle: "Draft Calculator",
+        autoRefresh: "Auto-refresh",
+        nextRefresh: "Next",
+        language: "Language",
+        contextRiver: "Context / River",
+        allRivers: "All Rivers",
+        journey: "Journey",
+        selectStart: "Select start",
+        selectEnd: "Select end",
+        to: "to",
+        displayMode: "Display Mode",
+        displayModeDraft: "Draft",
+        displayModeLevel: "Water Level (raw)",
+        showUncertainty: "Show Forecast Uncertainty",
+        reloadData: "Reload Data",
+        loading: "Loading...",
+        apiTime: "API time",
+        initializing: "Initializing...",
+        loadingStatic: "Loading static gauge definitions...",
+        staticLoaded: "Static data loaded.",
+        fetchingData: "Fetching data from API...",
+        dataUpdated: "Data updated ({successfulUpdates}/{apiGaugeCount} API sources)",
+        updateError: "Error updating ({errorCount} failed). First: {firstError}",
+        updateWarning: "Partially updated ({warningCount} warnings). First: {firstWarning}",
+        loadError: "Error loading: {errorMessage}",
+        criticalDraftTitle: "Critical draft ({direction})",
+        directionUp: "Upstream",
+        directionDown: "Downstream",
+        directionMixed: "up/down",
+        now: "Now",
+        forecast: "Forecast",
+        noCriticalForecast: "No critical forecast found",
+        noForecastsAvailable: "No forecast data available",
+        loadingForecasts: "Loading forecasts...",
+        tabMaxDraft: "Max Draft (Journey)",
+        tabPlanner: "Route Planner",
+        tabAllData: "All Data",
+        headerRiver: "River",
+        headerSection: "Section",
+        headerName: "Name",
+        headerValue: "Value",
+        headerTrend: "Trend",
+        headerOfficialRule: "Off. Rule",
+        headerCorrection: "Correction (cm)",
+        headerUp: "Up",
+        headerDown: "Down",
+        headerAdjRule: "Adj. Rule",
+        headerActualDraft: "Draft",
+        headerActualLevel: "Value",
+        headerUnitCm: "(cm)",
+        headerUnitActual: "(Act., cm)",
+        headerForecastValue: "({mode}, cm)",
+        noForecasts: "No Forecasts",
+        noDataForSelection: "Select a valid journey or no data available for journey.",
+        noApiData: "No API data loaded.",
+        noDataForFilter: "No data found for the selected filter.",
+        plannerSettingsTitle: "Route Planner Settings",
+        departureTime: "Departure Date/Time",
+        speedDownstream: "Speed Downstream (km/h)",
+        speedUpstream: "Speed Upstream (km/h)",
+        speedCanal: "Avg. Speed Main/RMD (km/h)",
+        speedCanalHint: "(From Mainz to Kelheim)",
+        system: "System",
+        systemA1: "A1 (14 hours/day)",
+        systemA2: "A2 (18 hours/day)",
+        systemB: "B (24 hours/day)",
+        systemCustom: "Custom",
+        hoursPerDay: "hours/day",
+        excludedDays: "Excluded Days",
+        showUncertaintyPlanner: "Show Forecast Uncertainty",
+        ifAvailable: "(If available)",
+        calculateMaxDraft: "Calculate Maximum Draft",
+        calculating: "Calculating...",
+        plannerResultTitle: "Route Plan Result",
+        maxPossibleDraft: "Maximum Possible Draft",
+        limitedBy: "Limited by",
+        mgdWarningText: "WARNING: The calculated draft of {calculatedDraft} cm exceeds the MGD for {mgdName} ({mgdDraft} cm). Sailing at this draft is at your own risk.",
+        canalLimitReason: "Rhine-Main-Danube Canal (max 250 cm)",
+        routeDetails: "Route Details",
+        plannerHeaderKm: "KM",
+        plannerHeaderName: "Name",
+        plannerHeaderEta: "ETA",
+        plannerHeaderForecastLevel: "Fcst. Level (cm)",
+        plannerHeaderOffset: "Offset (cm)",
+        plannerHeaderAdjRule: "Adj. Rule (cm)",
+        plannerHeaderMaxDraft: "Max Draft (cm)",
+        plannerHeaderNotes: "Notes",
+        noRoutePoints: "No route points calculated (possibly no forecasts available for ETAs).",
+        notesNoDataForEta: "No data for ETA",
+        notesWeeklyForecast: "Weekly fcst.",
+        notesCurrentLevel: "Current",
+        footerApiDate: "Data API as of",
+        notLoadedYet: "Not loaded yet",
+        optionalSegment: "Optional Extra Segment",
+        extraDistance: "Extra Distance (km)",
+        extraSpeed: "Speed Extra Segment (km/h)",
+        extraPosition: "Position Extra Segment",
+        posAfter: "After calculated route",
+        posBefore: "Before calculated route",
+        posHint: "(Adds time to start/end ETA)",
+        errorInvalidDate: "Invalid start date/time.",
+        errorNoRoute: "Please select a start and end point.",
+        errorInvalidSpeed: "Speeds must be greater than 0.",
+        errorInvalidHours: "Invalid custom hours (1-24).",
+        errorNoPath: "No route found between {start} and {end}. Check if a logical connection exists.",
+        errorCustomSegmentSpeed: "Speed for extra segment must be greater than 0 if distance is entered.",
+        calculationError: "Error calculating: {error}",
+    },
+    de: {
+        appTitle: "Tiefgang-Rechner",
+        autoRefresh: "Auto-Aktualisierung",
+        nextRefresh: "Nächste",
+        language: "Sprache",
+        contextRiver: "Kontext / Fluss",
+        allRivers: "Alle Flüsse",
+        journey: "Strecke",
+        selectStart: "Start wählen",
+        selectEnd: "Ende wählen",
+        to: "bis",
+        displayMode: "Anzeigemodus",
+        displayModeDraft: "Tiefgang",
+        displayModeLevel: "Wasserstand (roh)",
+        showUncertainty: "Prognose-Unsicherheit anzeigen",
+        reloadData: "Daten neu laden",
+        loading: "Laden...",
+        apiTime: "API-Zeit",
+        initializing: "Initialisiere...",
+        loadingStatic: "Lade statische Pegeldefinitionen...",
+        staticLoaded: "Statische Daten geladen.",
+        fetchingData: "Daten von API abrufen...",
+        dataUpdated: "Daten aktualisiert ({successfulUpdates}/{apiGaugeCount} API-Quellen)",
+        updateError: "Fehler bei Aktualisierung ({errorCount} fehlgeschlagen). Erster: {firstError}",
+        updateWarning: "Teilweise aktualisiert ({warningCount} Warnungen). Erster: {firstWarning}",
+        loadError: "Fehler beim Laden: {errorMessage}",
+        criticalDraftTitle: "Kritischer Tiefgang ({direction})",
+        directionUp: "Bergfahrt",
+        directionDown: "Talfahrt",
+        directionMixed: "Berg/Tal",
+        now: "Jetzt",
+        forecast: "Prognose",
+        noCriticalForecast: "Keine kritische Prognose gefunden",
+        noForecastsAvailable: "Keine Prognosedaten verfügbar",
+        loadingForecasts: "Lade Prognosen...",
+        tabMaxDraft: "Max. Tiefgang (Strecke)",
+        tabPlanner: "Routenplaner",
+        tabAllData: "Alle Daten",
+        headerRiver: "Fluss",
+        headerSection: "Strecke",
+        headerName: "Name",
+        headerValue: "Wert",
+        headerTrend: "Tendenz",
+        headerOfficialRule: "Off. Faustr.",
+        headerCorrection: "Korrektur (cm)",
+        headerUp: "Berg",
+        headerDown: "Tal",
+        headerAdjRule: "Ang. Faustr.",
+        headerActualDraft: "Tiefgang",
+        headerActualLevel: "Wert",
+        headerUnitCm: "(cm)",
+        headerUnitActual: "(Akt., cm)",
+        headerForecastValue: "({mode}, cm)",
+        noForecasts: "Keine Prognosen",
+        noDataForSelection: "Gültige Strecke wählen oder keine Daten für Strecke verfügbar.",
+        noApiData: "Keine API-Daten geladen.",
+        noDataForFilter: "Keine Daten für den gewählten Filter gefunden.",
+        plannerSettingsTitle: "Routenplaner-Einstellungen",
+        departureTime: "Abfahrtsdatum/-zeit",
+        speedDownstream: "Geschwindigkeit Talfahrt (km/h)",
+        speedUpstream: "Geschwindigkeit Bergfahrt (km/h)",
+        speedCanal: "Ø Geschw. Main/RMD (km/h)",
+        speedCanalHint: "(Von Mainz bis Kelheim)",
+        system: "System",
+        systemA1: "A1 (14 Std./Tag)",
+        systemA2: "A2 (18 Std./Tag)",
+        systemB: "B (24 Std./Tag)",
+        systemCustom: "Benutzerdef.",
+        hoursPerDay: "Std./Tag",
+        excludedDays: "Ausgeschlossene Tage",
+        showUncertaintyPlanner: "Prognose-Unsicherheit anzeigen",
+        ifAvailable: "(Falls verfügbar)",
+        calculateMaxDraft: "Maximalen Tiefgang berechnen",
+        calculating: "Berechne...",
+        plannerResultTitle: "Routenplan-Ergebnis",
+        maxPossibleDraft: "Maximal möglicher Tiefgang",
+        limitedBy: "Begrenzt durch",
+        mgdWarningText: "WARNUNG: Der berechnete Tiefgang von {calculatedDraft} cm überschreitet die MGD für {mgdName} ({mgdDraft} cm). Fahrt auf eigene Gefahr.",
+        canalLimitReason: "Rhein-Main-Donau-Kanal (max. 250 cm)",
+        routeDetails: "Routendetails",
+        plannerHeaderKm: "KM",
+        plannerHeaderName: "Name",
+        plannerHeaderEta: "Ank.-Zeit",
+        plannerHeaderForecastLevel: "Prog. Stand (cm)",
+        plannerHeaderOffset: "Offset (cm)",
+        plannerHeaderAdjRule: "Ang. Faustr. (cm)",
+        plannerHeaderMaxDraft: "Max. Tiefg. (cm)",
+        plannerHeaderNotes: "Notizen",
+        noRoutePoints: "Keine Routenpunkte berechnet (möglicherweise keine Prognosen für Ankunftszeiten verfügbar).",
+        notesNoDataForEta: "Keine Daten für Ank.-Zeit",
+        notesWeeklyForecast: "Wochenprog.",
+        notesCurrentLevel: "Aktuell",
+        footerApiDate: "Daten API vom",
+        notLoadedYet: "Noch nicht geladen",
+        optionalSegment: "Optionaler Zusatzabschnitt",
+        extraDistance: "Zusätzliche Distanz (km)",
+        extraSpeed: "Geschw. Zusatzabschnitt (km/h)",
+        extraPosition: "Position Zusatzabschnitt",
+        posAfter: "Nach berechneter Route",
+        posBefore: "Vor berechneter Route",
+        posHint: "(Fügt Zeit am Anfang/Ende hinzu)",
+        errorInvalidDate: "Ungültiges Startdatum/-zeit.",
+        errorNoRoute: "Bitte Start- und Endpunkt auswählen.",
+        errorInvalidSpeed: "Geschwindigkeiten müssen größer als 0 sein.",
+        errorInvalidHours: "Ungültige benutzerdef. Stunden (1-24).",
+        errorNoPath: "Keine Route zwischen {start} und {end} gefunden. Prüfen Sie, ob eine logische Verbindung besteht.",
+        errorCustomSegmentSpeed: "Geschwindigkeit für Zusatzabschnitt muss > 0 sein, wenn Distanz eingegeben wurde.",
+        calculationError: "Fehler bei Berechnung: {error}",
+    },
+    fr: {
+        appTitle: "Calculateur de Tirant d'eau",
+        autoRefresh: "Actualisation auto",
+        nextRefresh: "Prochain",
+        language: "Langue",
+        contextRiver: "Contexte / Rivière",
+        allRivers: "Toutes les rivières",
+        journey: "Trajet",
+        selectStart: "Sélectionner le départ",
+        selectEnd: "Sélectionner l'arrivée",
+        to: "à",
+        displayMode: "Mode d'affichage",
+        displayModeDraft: "Tirant d'eau",
+        displayModeLevel: "Niveau d'eau (brut)",
+        showUncertainty: "Afficher l'incertitude des prévisions",
+        reloadData: "Recharger les données",
+        loading: "Chargement...",
+        apiTime: "Heure API",
+        initializing: "Initialisation...",
+        loadingStatic: "Chargement des définitions statiques...",
+        staticLoaded: "Données statiques chargées.",
+        fetchingData: "Récupération des données de l'API...",
+        dataUpdated: "Données mises à jour ({successfulUpdates}/{apiGaugeCount} sources API)",
+        updateError: "Erreur de mise à jour ({errorCount} échecs). Premier: {firstError}",
+        updateWarning: "Mise à jour partielle ({warningCount} avertissements). Premier: {firstWarning}",
+        loadError: "Erreur de chargement : {errorMessage}",
+        criticalDraftTitle: "Tirant d'eau critique ({direction})",
+        directionUp: "Montant",
+        directionDown: "Avalant",
+        directionMixed: "mont/aval",
+        now: "Maintenant",
+        forecast: "Prévision",
+        noCriticalForecast: "Aucune prévision critique trouvée",
+        noForecastsAvailable: "Aucune donnée de prévision disponible",
+        loadingForecasts: "Chargement des prévisions...",
+        tabMaxDraft: "Tirant d'eau max (Trajet)",
+        tabPlanner: "Planificateur d'itinéraire",
+        tabAllData: "Toutes les données",
+        headerRiver: "Rivière",
+        headerSection: "Section",
+        headerName: "Nom",
+        headerValue: "Valeur",
+        headerTrend: "Tendance",
+        headerOfficialRule: "Règle off.",
+        headerCorrection: "Correction (cm)",
+        headerUp: "Montant",
+        headerDown: "Avalant",
+        headerAdjRule: "Règle ajus.",
+        headerActualDraft: "Tirant d'eau",
+        headerActualLevel: "Valeur",
+        headerUnitCm: "(cm)",
+        headerUnitActual: "(Act., cm)",
+        headerForecastValue: "({mode}, cm)",
+        noForecasts: "Aucune prévision",
+        noDataForSelection: "Sélectionnez un trajet valide ou aucune donnée disponible pour le trajet.",
+        noApiData: "Aucune donnée API chargée.",
+        noDataForFilter: "Aucune donnée trouvée pour le filtre sélectionné.",
+        plannerSettingsTitle: "Paramètres du planificateur d'itinéraire",
+        departureTime: "Date/Heure de départ",
+        speedDownstream: "Vitesse en aval (km/h)",
+        speedUpstream: "Vitesse en amont (km/h)",
+        speedCanal: "Vit. moy. Main/RMD (km/h)",
+        speedCanalHint: "(De Mayence à Kelheim)",
+        system: "Système",
+        systemA1: "A1 (14 heures/jour)",
+        systemA2: "A2 (18 heures/jour)",
+        systemB: "B (24 heures/jour)",
+        systemCustom: "Personnalisé",
+        hoursPerDay: "heures/jour",
+        excludedDays: "Jours exclus",
+        showUncertaintyPlanner: "Afficher l'incertitude des prévisions",
+        ifAvailable: "(Si disponible)",
+        calculateMaxDraft: "Calculer le tirant d'eau maximum",
+        calculating: "Calcul en cours...",
+        plannerResultTitle: "Résultat du plan d'itinéraire",
+        maxPossibleDraft: "Tirant d'eau maximum possible",
+        limitedBy: "Limité par",
+        mgdWarningText: "AVERTISSEMENT : Le tirant d'eau calculé de {calculatedDraft} cm dépasse le MGD pour {mgdName} ({mgdDraft} cm). La navigation avec ce tirant d'eau est à vos propres risques.",
+        canalLimitReason: "Canal Rhin-Main-Danube (max 250 cm)",
+        routeDetails: "Détails de l'itinéraire",
+        plannerHeaderKm: "KM",
+        plannerHeaderName: "Nom",
+        plannerHeaderEta: "HPA",
+        plannerHeaderForecastLevel: "Niv. Prévu (cm)",
+        plannerHeaderOffset: "Décalage (cm)",
+        plannerHeaderAdjRule: "Règle ajus. (cm)",
+        plannerHeaderMaxDraft: "Tirant d'eau max (cm)",
+        plannerHeaderNotes: "Notes",
+        noRoutePoints: "Aucun point d'itinéraire calculé (probablement aucune prévision disponible pour les HPA).",
+        notesNoDataForEta: "Pas de données pour HPA",
+        notesWeeklyForecast: "Prév. hebd.",
+        notesCurrentLevel: "Actuel",
+        footerApiDate: "Données API du",
+        notLoadedYet: "Pas encore chargé",
+        optionalSegment: "Segment supplémentaire optionnel",
+        extraDistance: "Distance suppl. (km)",
+        extraSpeed: "Vitesse seg. suppl. (km/h)",
+        extraPosition: "Position seg. suppl.",
+        posAfter: "Après l'itinéraire calculé",
+        posBefore: "Avant l'itinéraire calculé",
+        posHint: "(Ajoute du temps à l'HPA de départ/fin)",
+        errorInvalidDate: "Date/heure de départ invalide.",
+        errorNoRoute: "Veuillez sélectionner un point de départ et d'arrivée.",
+        errorInvalidSpeed: "Les vitesses doivent être supérieures à 0.",
+        errorInvalidHours: "Heures personnalisées invalides (1-24).",
+        errorNoPath: "Aucun itinéraire trouvé entre {start} et {end}. Vérifiez qu'une connexion logique existe.",
+        errorCustomSegmentSpeed: "La vitesse du segment supplémentaire doit être supérieure à 0 si la distance est saisie.",
+        calculationError: "Erreur de calcul : {error}",
+    },
+    ru: {
+        appTitle: "Калькулятор Осадки",
+        autoRefresh: "Автообновление",
+        nextRefresh: "Следующее",
+        language: "Язык",
+        contextRiver: "Контекст / Река",
+        allRivers: "Все реки",
+        journey: "Маршрут",
+        selectStart: "Выбрать старт",
+        selectEnd: "Выбрать финиш",
+        to: "до",
+        displayMode: "Режим отображения",
+        displayModeDraft: "Осадка",
+        displayModeLevel: "Уровень воды (сырой)",
+        showUncertainty: "Показать неопределенность прогноза",
+        reloadData: "Перезагрузить данные",
+        loading: "Загрузка...",
+        apiTime: "Время API",
+        initializing: "Инициализация...",
+        loadingStatic: "Загрузка статических определений...",
+        staticLoaded: "Статические данные загружены.",
+        fetchingData: "Получение данных из API...",
+        dataUpdated: "Данные обновлены ({successfulUpdates}/{apiGaugeCount} источников API)",
+        updateError: "Ошибка обновления ({errorCount} сбоев). Первая: {firstError}",
+        updateWarning: "Частично обновлено ({warningCount} предупреждений). Первое: {firstWarning}",
+        loadError: "Ошибка загрузки: {errorMessage}",
+        criticalDraftTitle: "Критическая осадка ({direction})",
+        directionUp: "Против течения",
+        directionDown: "По течению",
+        directionMixed: "вверх/вниз по течению",
+        now: "Сейчас",
+        forecast: "Прогноз",
+        noCriticalForecast: "Критический прогноз не найден",
+        noForecastsAvailable: "Данные прогноза недоступны",
+        loadingForecasts: "Загрузка прогнозов...",
+        tabMaxDraft: "Макс. Осадка (Маршрут)",
+        tabPlanner: "Планировщик маршрута",
+        tabAllData: "Все данные",
+        headerRiver: "Река",
+        headerSection: "Участок",
+        headerName: "Название",
+        headerValue: "Значение",
+        headerTrend: "Тенденция",
+        headerOfficialRule: "Офиц. правило",
+        headerCorrection: "Коррекция (см)",
+        headerUp: "Против теч.",
+        headerDown: "По теч.",
+        headerAdjRule: "Скорр. правило",
+        headerActualDraft: "Осадка",
+        headerActualLevel: "Значение",
+        headerUnitCm: "(см)",
+        headerUnitActual: "(Акт., см)",
+        headerForecastValue: "({mode}, см)",
+        noForecasts: "Нет прогнозов",
+        noDataForSelection: "Выберите действительный маршрут или данные для маршрута недоступны.",
+        noApiData: "Данные API не загружены.",
+        noDataForFilter: "Данные для выбранного фильтра не найдены.",
+        plannerSettingsTitle: "Настройки планировщика маршрута",
+        departureTime: "Дата/Время отправления",
+        speedDownstream: "Скорость по течению (км/ч)",
+        speedUpstream: "Скорость против течения (км/ч)",
+        speedCanal: "Сред. скорость Майн/РМД (км/ч)",
+        speedCanalHint: "(От Майнца до Кельхайма)",
+        system: "Система",
+        systemA1: "A1 (14 часов/день)",
+        systemA2: "A2 (18 часов/день)",
+        systemB: "B (24 часа/день)",
+        systemCustom: "Пользов.",
+        hoursPerDay: "часов/день",
+        excludedDays: "Исключенные дни",
+        showUncertaintyPlanner: "Показать неопределенность прогноза",
+        ifAvailable: "(Если доступно)",
+        calculateMaxDraft: "Рассчитать максимальную осадку",
+        calculating: "Расчет...",
+        plannerResultTitle: "Результат плана маршрута",
+        maxPossibleDraft: "Максимально возможная осадка",
+        limitedBy: "Ограничено",
+        mgdWarningText: "ВНИМАНИЕ: Расчетная осадка {calculatedDraft} см превышает MGD для {mgdName} ({mgdDraft} см). Движение с такой осадкой на ваш страх и риск.",
+        canalLimitReason: "Канал Рейн-Майн-Дунай (макс. 250 см)",
+        routeDetails: "Детали маршрута",
+        plannerHeaderKm: "КМ",
+        plannerHeaderName: "Название",
+        plannerHeaderEta: "ПВП",
+        plannerHeaderForecastLevel: "Прогн. Уровень (см)",
+        plannerHeaderOffset: "Смещение (см)",
+        plannerHeaderAdjRule: "Скорр. правило (см)",
+        plannerHeaderMaxDraft: "Макс. Осадка (см)",
+        plannerHeaderNotes: "Примечания",
+        noRoutePoints: "Точки маршрута не рассчитаны (возможно, нет прогнозов для ПВП).",
+        notesNoDataForEta: "Нет данных для ПВП",
+        notesWeeklyForecast: "Нед. прогн.",
+        notesCurrentLevel: "Текущий",
+        footerApiDate: "Данные API от",
+        notLoadedYet: "Еще не загружено",
+        optionalSegment: "Дополнительный участок (опционально)",
+        extraDistance: "Доп. расстояние (км)",
+        extraSpeed: "Скорость на доп. участке (км/ч)",
+        extraPosition: "Положение доп. участка",
+        posAfter: "После расчетного маршрута",
+        posBefore: "До расчетного маршрута",
+        posHint: "(Добавляет время к начальному/конечному ПВП)",
+        errorInvalidDate: "Неверная дата/время отправления.",
+        errorNoRoute: "Пожалуйста, выберите начальную и конечную точки.",
+        errorInvalidSpeed: "Скорости должны быть больше 0.",
+        errorInvalidHours: "Неверные пользовательские часы (1-24).",
+        errorNoPath: "Маршрут между {start} и {end} не найден. Проверьте наличие логического соединения.",
+        errorCustomSegmentSpeed: "Скорость дополнительного участка должна быть больше 0, если введено расстояние.",
+        calculationError: "Ошибка расчета: {error}",
+    }
+};
+
+    // 2. Locale mapping for date/time formatting
+    const localeMap = {
+        nl: 'nl-NL',
+        en: 'en-GB',
+        de: 'de-DE',
+        fr: 'fr-FR',
+        ru: 'ru-RU'
+    };
+    
+    // 3. Create React Context for i18n
+    const I18nContext = createContext();
+
+    // 4. Create a Provider component
+    function I18nProvider({ children }) {
+        const [language, setLanguageState] = useState(() => getCookie('appLanguage') || 'nl');
+
+        const setLanguage = (lang) => {
+            setCookie('appLanguage', lang, 365);
+            setLanguageState(lang);
+            document.documentElement.lang = lang; // Set html lang attribute
+        };
+        
+        useEffect(() => {
+            document.documentElement.lang = language;
+        }, [language]);
+
+        const t = useCallback((key, replacements = {}) => {
+            // Fallback chain: Current Lang -> English -> Key
+            let text = translations[language]?.[key] || translations.en?.[key] || key;
+            
+            for (const placeholder in replacements) {
+                text = text.replace(`{${placeholder}}`, replacements[placeholder]);
+            }
+            
+            return text;
+        }, [language]);
+
+        const value = {
+            language,
+            setLanguage,
+            t,
+            locale: localeMap[language] || 'en-GB', // The full locale string for date formatting
+            weekdays: WEEKDAYS // Pass weekdays constant through context if it needs translation later
+        };
+
+        return (
+            <I18nContext.Provider value={value}>
+                {children}
+            </I18nContext.Provider>
+        );
+    }
+
+    // --- I18N: END INTERNATIONALIZATION SETUP ---
+
 
     // --- Constants ---
     const API_URL = 'https://rdd-backend.vercel.app/api/data';
@@ -974,9 +1583,11 @@
     //Millingen = spijk, Loevestijn = Woudrichem
     const MGD_TARGET_GAUGE_NAMES = ['Spijk - Woudrichem', 'Millingen tot Maas-Waalkanaal', "Maas-Waalkan tot A'dam-Rijnkanaal", "Maas-Waalkanaal tot A'dam-Rijnkanaal", "Maas-Waalkanaal tot Amsterdam-Rijnkanaal", "A'dam-Rijnkanaal tot Loevestein", "Amsterdam-Rijnkanaal tot Loevestein", "Spijk - Maas-WaalKanaal", "Maas-Waalkanaal - A'dam-Rijnkanaal", "Maas-Waalkanaal - Amsterdam-Rijnkanaal", "A'dam-Rijnkanaal - Woudrichem", , "A'dam-Rijnkanaal - Woudrichem"];
     const MGD_TARGET_GAUGE_KMS = ["857.7 - 952.5", "857.7 - 887.0", "887.0 - 913.3", "913.3 - 952.5"]
+    // I18N: Weekdays can be translated if needed, but short codes are often universal.
+    // For full day names, this would be moved into the translations object.
     const WEEKDAYS = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
 
-    // --- Cookie Utilities ---
+    // --- Cookie Utilities (Unchanged) ---
     function setCookie(name, value, days = 3650) {
         const date = new Date();
         date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -1002,7 +1613,7 @@
         return null;
     }
 
-    // --- API Fetch Function ---
+    // --- API Fetch Function (Unchanged) ---
     async function fetchConsolidatedData(force = false) { /* ... */
         const url = `${API_URL}?t=${Date.now()}`;
         console.log(`Fetching data from: ${url}`);
@@ -1032,7 +1643,8 @@
     }
 
     // --- Helper Functions ---
-    function formatTimeDisplay(timeString) { /* ... */
+    // I18N: Updated to accept a locale
+    function formatTimeDisplay(timeString, locale = 'nl-NL') {
         if (!timeString || typeof timeString !== 'string') return "N/A";
         if (timeString.length === 5 && timeString.includes(':')) return timeString;
         if (timeString.includes(' ') && timeString.includes(':')) {
@@ -1041,13 +1653,13 @@
         }
         try {
             const date = new Date(timeString);
-            if (!isNaN(date.getTime())) return date.toLocaleTimeString('nl-NL', {hour: '2-digit', minute: '2-digit'});
+            if (!isNaN(date.getTime())) return date.toLocaleTimeString(locale, {hour: '2-digit', minute: '2-digit'});
         } catch (e) {
         }
         return timeString || "N/A";
     }
 
-    function getGaugeUrl(gauge) { /* ... */
+    function getGaugeUrl(gauge) { /* ... Unchanged ... */
         if (!gauge) return '#';
         const gaugeName = gauge.name;
         const gaugeRiver = gauge.river;
@@ -1091,7 +1703,7 @@
         return '#';
     }
 
-    function diffDays(dateStr1, dateStr2) { /* ... */
+    function diffDays(dateStr1, dateStr2) { /* ... Unchanged ... */
         try {
             const date1 = new Date(Date.UTC(parseInt(dateStr1.substring(0, 4)), parseInt(dateStr1.substring(5, 7)) - 1, parseInt(dateStr1.substring(8, 10)), 12, 0, 0));
             const date2 = new Date(Date.UTC(parseInt(dateStr2.substring(0, 4)), parseInt(dateStr2.substring(5, 7)) - 1, parseInt(dateStr2.substring(8, 10)), 12, 0, 0));
@@ -1103,9 +1715,8 @@
         }
     }
 
-    // --- Date/Time Helper for Operational Time ---
-    // --- Date/Time Helper for Operational Time ---
-    function addOperationalTime(startDate, durationHours, operationalHoursPerDay, excludedDaysOfWeek) {
+    // --- Date/Time Helper for Operational Time (Unchanged) ---
+    function addOperationalTime(startDate, durationHours, operationalHoursPerDay, excludedDaysOfWeek) { /* ... Unchanged ... */
         if (operationalHoursPerDay <= 0 || durationHours <= 0) return startDate;
 
         let currentTime = new Date(startDate.getTime());
@@ -1196,8 +1807,8 @@
         return currentTime;
     }
 
-    // --- Get Forecast for specific Date/Time ---
-    function getForecastForDateTime(apiData, targetDateTime) { /* ... */
+    // --- Get Forecast for specific Date/Time (Unchanged) ---
+    function getForecastForDateTime(apiData, targetDateTime) { /* ... Unchanged ... */
         if (!apiData || !targetDateTime || isNaN(targetDateTime.getTime())) return null;
         const targetYear = targetDateTime.getFullYear();
         const targetMonth = String(targetDateTime.getMonth() + 1).padStart(2, '0');
@@ -1270,8 +1881,8 @@
         return null;
     }
 
-    // --- NEW: Calculate Forecast Uncertainty based on river and publication time ---
-    function calculateForecastUncertainty(gauge, forecastDateStr, now) {
+    // --- NEW: Calculate Forecast Uncertainty based on river and publication time (Unchanged) ---
+    function calculateForecastUncertainty(gauge, forecastDateStr, now) { /* ... Unchanged ... */
         if (!gauge || !gauge.river || !forecastDateStr || !now) {
             return null;
         }
@@ -1321,8 +1932,8 @@
             return 20; // ±20 cm
         }
     }
-    // --- NEW: Standalone Pathfinding Helper Function ---
-    const findRoutePath = (startGaugeName, endGaugeName, allGauges, speeds) => {
+    // --- NEW: Standalone Pathfinding Helper Function (Unchanged) ---
+    const findRoutePath = (startGaugeName, endGaugeName, allGauges, speeds) => { /* ... Unchanged ... */
         if (!startGaugeName || !endGaugeName) return null;
 
         const gaugeMap = new Map(allGauges.map(g => [g.name, g]));
@@ -1435,6 +2046,14 @@
 
 // --- React Component ---
 function RhineDraftCalculator() {
+        // I18N: Use the i18n context
+        const { language, setLanguage, t, locale, weekdays } = useContext(I18nContext);
+
+        // I18N: Set document title dynamically
+        useEffect(() => {
+            document.title = t('appTitle');
+        }, [t]);
+
         // --- State ---
         const [allGaugeStaticData, setAllGaugeStaticData] = useState([]);
         const [gaugeApiData, setGaugeApiData] = useState({});
@@ -1443,7 +2062,7 @@ function RhineDraftCalculator() {
             downstream: {}
         });
         const [forecastDates, setForecastDates] = useState([]);
-        const [dataStatus, setDataStatus] = useState({status: 'pending', message: 'Initializing...'});
+        const [dataStatus, setDataStatus] = useState({status: 'pending', message: t('initializing')});
         const [lastUpdated, setLastUpdated] = useState(null);
         const [travelDirection, setTravelDirection] = useState('downstream');
         const [autoRefresh, setAutoRefresh] = useState(true);
@@ -1517,7 +2136,7 @@ const [plannerSettings, setPlannerSettings] = useState(() => {
         }, [journey, selectedRiver, allGaugeStaticData]);
 
         useEffect(() => {
-            setDataStatus({status: 'pending', message: 'Loading static gauge definitions...'});
+            setDataStatus({status: 'pending', message: t('loadingStatic')});
             const CANAL_AVG_SPEED = 7.1;
             const CANAL_DISTANCE = 555;
             const combinedStaticList = [
@@ -1651,11 +2270,11 @@ const [plannerSettings, setPlannerSettings] = useState(() => {
                 downstream: {...defaultCorrections.downstream, ...(savedCorrections?.downstream || {})}
             };
             setCustomCorrections(mergedCorrections);
-            setDataStatus({status: 'success', message: 'Static data loaded.'});
-        }, []);
+            setDataStatus({status: 'success', message: t('staticLoaded')});
+        }, [t]);
 
         const loadGaugeApiData = useCallback(async (force = false) => {
-            setDataStatus({status: 'pending', message: 'Data ophalen van API...'});
+            setDataStatus({status: 'pending', message: t('fetchingData')});
             if (refreshButtonRef.current) refreshButtonRef.current.disabled = true;
             try {
                 const apiResponse = await fetchConsolidatedData(force);
@@ -1722,7 +2341,7 @@ const [plannerSettings, setPlannerSettings] = useState(() => {
                         newApiData[displayKey] = {
                             apiName: apiLookupKey,
                             currentLevel: rawData.currentLevel ?? null,
-                            currentTime: formatTimeDisplay(rawData.currentTime || rawData.lastUpdated),
+                            currentTime: formatTimeDisplay(rawData.currentTime || rawData.lastUpdated, locale),
                             currentTrend: rawData.currentTrend ?? null,
                             forecasts: processedForecasts,
                             weeklyForecasts: rawData.weeklyForecasts ?? null,
@@ -1753,12 +2372,18 @@ const [plannerSettings, setPlannerSettings] = useState(() => {
                 }
                 setForecastDates(futureDates);
                 setLastUpdated(latestApiTimestamp > 0 ? new Date(latestApiTimestamp) : new Date());
-                let finalMessage = `Data bijgewerkt (${successfulUpdates}/${apiGaugeCount} API bronnen)`;
-                if (overallStatus === 'error') finalMessage = `Fout bij bijwerken (${errorMessages.length} mislukt). ${errorMessages.length > 0 ? `Eerste: ${errorMessages[0]}` : ''}`; else if (overallStatus === 'warning') finalMessage = `Deels bijgewerkt (${warningMessages.length} waarschuwingen). ${warningMessages.length > 0 ? `Eerste: ${warnings[0]}` : ''}`;
+                let finalMessage;
+                if (overallStatus === 'error') {
+                    finalMessage = t('updateError', { errorCount: errorMessages.length, firstError: errorMessages[0] || '' });
+                } else if (overallStatus === 'warning') {
+                    finalMessage = t('updateWarning', { warningCount: warningMessages.length, firstWarning: warningMessages[0] || '' });
+                } else {
+                    finalMessage = t('dataUpdated', { successfulUpdates, apiGaugeCount });
+                }
                 setDataStatus({status: overallStatus, message: finalMessage});
             } catch (error) {
                 console.error("Failed to load or process API data:", error);
-                setDataStatus({status: 'error', message: `Fout bij laden: ${error.message}`});
+                setDataStatus({status: 'error', message: t('loadError', { errorMessage: error.message })});
                 setLastUpdated(new Date());
             } finally {
                 if (refreshButtonRef.current) refreshButtonRef.current.disabled = false;
@@ -1769,7 +2394,7 @@ const [plannerSettings, setPlannerSettings] = useState(() => {
                     setNextRefreshTime(null);
                 }
             }
-        }, [allGaugeStaticData, autoRefresh]);
+        }, [allGaugeStaticData, autoRefresh, t, locale]);
 
         useEffect(() => {
             if (allGaugeStaticData.length > 0) loadGaugeApiData(false);
@@ -2359,13 +2984,13 @@ const calculateRoutePlan = useCallback(() => {
             try {
                 // 1. Validate Inputs
                 const startDateTime = new Date(plannerSettings.startDate);
-                if (isNaN(startDateTime.getTime())) throw new Error("Ongeldige startdatum/-tijd.");
+                if (isNaN(startDateTime.getTime())) throw new Error(t('errorInvalidDate'));
 
                 const startGaugeName = journey[selectedRiver]?.start;
                 const endGaugeName = journey[selectedRiver]?.end;
-                if (!startGaugeName || !endGaugeName) throw new Error("Selecteer een begin- en eindpunt.");
+                if (!startGaugeName || !endGaugeName) throw new Error(t('errorNoRoute'));
 
-                if (!plannerSettings.speedDownstream || plannerSettings.speedDownstream <= 0 || !plannerSettings.speedUpstream || plannerSettings.speedUpstream <= 0) throw new Error("Snelheden moeten groter dan 0 zijn.");
+                if (!plannerSettings.speedDownstream || plannerSettings.speedDownstream <= 0 || !plannerSettings.speedUpstream || plannerSettings.speedUpstream <= 0) throw new Error(t('errorInvalidSpeed'));
                 let operationalHours;
                 switch (plannerSettings.operationalMode) {
                     case 'A1': operationalHours = 14; break;
@@ -2373,12 +2998,12 @@ const calculateRoutePlan = useCallback(() => {
                     case 'B': operationalHours = 24; break;
                     case 'Custom':
                         operationalHours = Number(plannerSettings.customOperationalHours);
-                        if (!operationalHours || operationalHours <= 0 || operationalHours > 24) throw new Error("Ongeldige custom uren (1-24).");
+                        if (!operationalHours || operationalHours <= 0 || operationalHours > 24) throw new Error(t('errorInvalidHours'));
                         break;
-                    default: throw new Error("Ongeldig systeem.");
+                    default: throw new Error(t('system'));
                 }
                 if (plannerSettings.customSegmentKm > 0 && (!plannerSettings.customSegmentSpeed || plannerSettings.customSegmentSpeed <= 0)) {
-                    throw new Error("Snelheid voor extra trajectdeel moet groter dan 0 zijn als afstand is ingevuld.");
+                    throw new Error(t('errorCustomSegmentSpeed'));
                 }
 
                 // 2. Find the route using the pathfinder
@@ -2388,7 +3013,7 @@ const calculateRoutePlan = useCallback(() => {
                 });
 
                 if (!routeGauges || routeGauges.length === 0) {
-                     throw new Error(`Geen route gevonden tussen ${startGaugeName} en ${endGaugeName}. Controleer of er een logische verbinding bestaat.`);
+                     throw new Error(t('errorNoPath', { start: startGaugeName, end: endGaugeName }));
                 }
 
                 // 3. Initialize variables for calculation loop
@@ -2448,7 +3073,7 @@ const calculateRoutePlan = useCallback(() => {
 
                     if (i === 0 && startDateTime <= now && currentApiData?.currentLevel !== null) {
                         forecastLevel = currentApiData.currentLevel;
-                        forecastTimeStr = currentApiData.currentTime || 'Actueel';
+                        forecastTimeStr = currentApiData.currentTime || t('now');
                         forecastSource = 'current';
                         isCurrentLevelUsed = true;
                     } else {
@@ -2496,7 +3121,7 @@ const calculateRoutePlan = useCallback(() => {
                         name: currentGauge.name, km: currentGauge.km, eta: eta, forecastLevel: forecastLevel,
                         forecastTime: forecastTimeStr, forecastSource: forecastSource, draftAtEta: draftAtEta,
                         correctedRule: correctedRule, offset: '-', draftUncertaintyText: draftUncertaintyText,
-                        notes: forecastLevel === null ? 'Geen data voor ETA' : (forecastSource === 'weekly' ? 'Weekpr.' : (forecastSource === 'current' ? 'Actueel' : '')),
+                        notes: forecastLevel === null ? t('notesNoDataForEta') : (forecastSource === 'weekly' ? t('notesWeeklyForecast') : (forecastSource === 'current' ? t('notesCurrentLevel') : '')),
                         isCritical: false, gaugeRef: currentGauge
                     });
                 }
@@ -2528,7 +3153,7 @@ const calculateRoutePlan = useCallback(() => {
                 if (routeContainsCanal && finalOverallMinDraft > 250) {
                     finalOverallMinDraft = 250;
                     // The canal is the limiting factor
-                    limitReason = { message: 'Rijn-Main-Donaukanaal (max. 250 cm)' };
+                    limitReason = { message: t('canalLimitReason') };
                 }
 
 
@@ -2559,7 +3184,7 @@ const calculateRoutePlan = useCallback(() => {
                     if (mgdStaticGauge && mgdApiData && mgdApiData.currentLevel !== null) {
                         const allowableMgdDraft = calculateDraft(mgdStaticGauge, mgdApiData.currentLevel, 'downstream'); // Assume downstream for MGD
                         if (allowableMgdDraft !== null && finalOverallMinDraft > allowableMgdDraft) {
-                            warnings.push(`De berekende diepgang van ${finalOverallMinDraft.toFixed(0)} cm overschrijdt de MGD voor Spijk-Woudrichem (${allowableMgdDraft.toFixed(0)} cm).`);
+                            warnings.push(t('mgdWarningText', { calculatedDraft: finalOverallMinDraft.toFixed(0), mgdName: 'Spijk-Woudrichem', mgdDraft: allowableMgdDraft.toFixed(0) }));
                         }
                     }
                 }
@@ -2571,14 +3196,14 @@ const calculateRoutePlan = useCallback(() => {
                          if (mgdApiData && mgdApiData.currentLevel !== null && mgdStaticGauge) {
                              const allowableMgdDraft = calculateDraft(mgdStaticGauge, mgdApiData.currentLevel, 'downstream');
                              if (allowableMgdDraft !== null && finalOverallMinDraft > allowableMgdDraft) {
-                                 warnings.push(`De berekende diepgang van ${finalOverallMinDraft.toFixed(0)} cm overschrijdt de MGD voor ${mgdName} (${allowableMgdDraft.toFixed(0)} cm).`);
+                                 warnings.push(t('mgdWarningText', { calculatedDraft: finalOverallMinDraft.toFixed(0), mgdName: mgdName, mgdDraft: allowableMgdDraft.toFixed(0) }));
                              }
                          }
                      });
                  }
 
                 if (warnings.length > 0) {
-                    mgdWarning = "WAARSCHUWING: " + warnings.join(' Varen met deze diepgang is op eigen risico. ');
+                    mgdWarning = warnings.join(' ');
                 }
 
                 setRoutePlanResult({
@@ -2598,7 +3223,7 @@ const calculateRoutePlan = useCallback(() => {
                 });
                 setRoutePlanStatus('error');
             }
-        }, [plannerSettings, journey, selectedRiver, allGaugeStaticData, gaugeApiData, calculateDraft, showUncertainty, customCorrections, calculateCustomRuleOfThumbDisplay]);
+        }, [plannerSettings, journey, selectedRiver, allGaugeStaticData, gaugeApiData, calculateDraft, showUncertainty, customCorrections, calculateCustomRuleOfThumbDisplay, t]);
 
         // --- Effect to recalculate plan when uncertainty toggle changes ---
         useEffect(() => {
@@ -2626,26 +3251,38 @@ const calculateRoutePlan = useCallback(() => {
                 {/* Header Controls Area */}
                 <header className="controls-area">
                     <div className="controls-left">
-                        <h1 style={{margin: '0 0 0.5rem 0', fontSize: '1.5rem'}}>Diepgang Calculator</h1>
+                        <h1 style={{margin: '0 0 0.5rem 0', fontSize: '1.5rem'}}>{t('appTitle')}</h1>
+                        
+                        {/* I18N: Language Selector */}
+                        <div className="control-group">
+                            <label>{t('language')}:</label>
+                            <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+                                <option value="nl">Nederlands</option>
+                                <option value="en">English</option>
+                                <option value="de">Deutsch</option>
+                                <option value="fr">Français</option>
+                                <option value="ru">Русский</option>
+                            </select>
+                        </div>
+
                         {/* Auto-refresh checkbox */}
                         <div className="control-group"><label><input type="checkbox" checked={autoRefresh}
-                                                                     onChange={(e) => setAutoRefresh(e.target.checked)}/>Auto-verversing
+                                                                     onChange={(e) => setAutoRefresh(e.target.checked)}/>{t('autoRefresh')}
                             ({REFRESH_INTERVAL_MS / 60000} min)</label> {autoRefresh && nextRefreshTime && <span
                             style={{
                                 marginLeft: '8px',
                                 fontSize: '0.8em',
                                 color: '#aaa'
-                            }}>Volgende: {nextRefreshTime.toLocaleTimeString([], {
+                            }}>{t('nextRefresh')}: {nextRefreshTime.toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit'
                         })}</span>} </div>
 
                         {/* --- UNIFIED RIVER SELECTOR --- */}
                         <div className="control-group">
-                            <label>Context / Rivier:</label>
+                            <label>{t('contextRiver')}:</label>
                             <select value={selectedRiver} onChange={(e) => setSelectedRiver(e.target.value)}>
-                                {/* MODIFIED: Always show "All Rivers" */}
-                                <option value="all">Alle Rivieren</option>
+                                <option value="all">{t('allRivers')}</option>
                                 <option value="Rijn/Waal">Rijn/Waal</option>
                                 <option value="Donau">Donau</option>
                                 <option value="IJssel">IJssel</option>
@@ -2654,10 +3291,10 @@ const calculateRoutePlan = useCallback(() => {
 
                         {/* --- MODIFIED: Journey Selection now uses gauge names --- */}
                         <div className="control-group">
-                            <label>Traject:</label>
+                            <label>{t('journey')}:</label>
                             <select value={journey[selectedRiver]?.start ?? ''}
                                     onChange={(e) => handleJourneyChange('start', e.target.value)}>
-                                <option value="">Selecteer begin</option>
+                                <option value="">{t('selectStart')}</option>
                                 {allGaugeStaticData
                                     .filter(g => g.river !== 'MGD' && g.name !== 'Konstanz' && g.name !== 'Ingolstadt')
                                     .filter(g => {
@@ -2683,10 +3320,10 @@ const calculateRoutePlan = useCallback(() => {
                                         {`${selectedRiver === 'all' ? gauge.river + ': ' : ''}${gauge.name} (${gauge.km})`}
                                     </option>)}
                             </select>
-                            <span>tot</span>
+                            <span>{t('to')}</span>
                             <select value={journey[selectedRiver]?.end ?? ''}
                                     onChange={(e) => handleJourneyChange('end', e.target.value)}>
-                                <option value="">Selecteer einde</option>
+                                <option value="">{t('selectEnd')}</option>
                                 {allGaugeStaticData
                                      .filter(g => g.river !== 'MGD' && g.name !== 'Konstanz' && g.name !== 'Ingolstadt')
                                      .filter(g => {
@@ -2717,27 +3354,25 @@ const calculateRoutePlan = useCallback(() => {
                         {/* Display Mode & Uncertainty Toggle (only for main tabs) */}
                         {(activeTab === 'route' || activeTab === 'all') && (
                             <>
-                                <div className="control-group"><label>Weergave Modus:</label>
+                                <div className="control-group"><label>{t('displayMode')}:</label>
                                     <div className="view-toggle-group"><label className="toggle-label"><input
                                         type="radio" value="draft" checked={displayMode === 'draft'}
-                                        onChange={handleDisplayModeChange}/> Diepgang</label> <label
+                                        onChange={handleDisplayModeChange}/> {t('displayModeDraft')}</label> <label
                                         className="toggle-label"><input type="radio" value="level"
                                                                         checked={displayMode === 'level'}
-                                                                        onChange={handleDisplayModeChange}/> Waterstand
-                                        (ruw) </label></div>
+                                                                        onChange={handleDisplayModeChange}/> {t('displayModeLevel')} </label></div>
                                 </div>
                                 <div className="control-group"><label className="toggle-label"> <input type="checkbox"
                                                                                                        checked={showUncertainty}
-                                                                                                       onChange={handleUncertaintyToggle}/> Toon
-                                    Prognose Onzekerheid </label></div>
+                                                                                                       onChange={handleUncertaintyToggle}/> {t('showUncertainty')} </label></div>
                             </>
                         )}
                         {/* Refresh Button & Data Status */}
                         <div className="control-group">
                             <button className="refresh-btn" onClick={() => handleRefresh(true)} ref={refreshButtonRef}
-                                    disabled={dataStatus.status === 'pending'}> {dataStatus.status === 'pending' ? 'Laden...' : 'Data opnieuw laden'} </button>
+                                    disabled={dataStatus.status === 'pending'}> {dataStatus.status === 'pending' ? t('loading') : t('reloadData')} </button>
                             <div
-                                className={`data-status ${dataStatus.status}`}> {dataStatus.message} {dataStatus.status !== 'pending' && lastUpdated ? `(API tijd: ${lastUpdated.toLocaleTimeString([], {
+                                className={`data-status ${dataStatus.status}`}> {dataStatus.message} {dataStatus.status !== 'pending' && lastUpdated ? `(${t('apiTime')}: ${lastUpdated.toLocaleTimeString(locale, {
                                 hour: '2-digit',
                                 minute: '2-digit'
                             })})` : ''} </div>
@@ -2747,16 +3382,16 @@ const calculateRoutePlan = useCallback(() => {
                     {/* Right Side Controls / Highlight Box (Contextual) */}
                     {activeTab === 'route' && (<div className="controls-right highlight-box">
                         <div style={{marginBottom: '6px', fontWeight: 'bold'}}>
-                            Kritieke diepgang ({isMixedDirectionRoute ? 'op/af' : (travelDirection === 'downstream' ? 'Af' : 'Op')}):
+                            {t('criticalDraftTitle', { direction: isMixedDirectionRoute ? t('directionMixed') : (travelDirection === 'downstream' ? t('directionDown') : t('directionUp')) })}:
                         </div>
-                        <div><span className="label">Nu:</span> <span
+                        <div><span className="label">{t('now')}:</span> <span
                             className="value">{criticalDraftValue !== null ? `${criticalDraftValue.toFixed(0)} cm` : 'N/A'}</span>
                             <span className="gauge">({criticalGaugeName || 'N/A'})</span> <span
                                 className="time">({criticalApiDataForHighlight?.currentTime || 'N/A'})</span></div>
                         {forecastBottlenecks.map((forecast) => (
                             <div key={`forecast-bottleneck-${forecast.date}`}>
                                 <span
-                                    className="label">{new Date(forecast.date + 'T12:00:00Z').toLocaleDateString('nl-NL', {
+                                    className="label">{new Date(forecast.date + 'T12:00:00Z').toLocaleDateString(locale, {
                                     weekday: 'short',
                                     day: 'numeric'
                                 })}:</span>
@@ -2771,11 +3406,9 @@ const calculateRoutePlan = useCallback(() => {
                         ))}
 
                         {forecastDates.length > 0 && forecastBottlenecks.every(f => f.gauge === null) && dataStatus.status !== 'pending' &&
-                            <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Geen kritieke prognose
-                                gevonden</div>} {forecastDates.length === 0 && dataStatus.status !== 'pending' &&
-                        <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Geen prognose data
-                            beschikbaar</div>} {dataStatus.status === 'pending' &&
-                        <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>Prognoses laden...</div>}
+                            <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>{t('noCriticalForecast')}</div>} {forecastDates.length === 0 && dataStatus.status !== 'pending' &&
+                        <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>{t('noForecastsAvailable')}</div>} {dataStatus.status === 'pending' &&
+                        <div style={{fontSize: '0.85em', color: '#333', marginTop: '4px'}}>{t('loadingForecasts')}</div>}
                     </div>)}
                     {activeTab === 'all' && (
                         <div className="controls-right"><p style={{fontSize: '0.9em', color: '#aaa'}}>Alle beschikbare
@@ -2790,13 +3423,13 @@ const calculateRoutePlan = useCallback(() => {
                     {/* Tabs */}
                     <div className="tab-controls">
                         <button className={`tab-button ${activeTab === 'route' ? 'active' : ''}`}
-                                onClick={() => handleTabChange('route')}>Max Diepgang (Traject)
+                                onClick={() => handleTabChange('route')}>{t('tabMaxDraft')}
                         </button>
                         <button className={`tab-button ${activeTab === 'planner' ? 'active' : ''}`}
-                                onClick={() => handleTabChange('planner')}>Route Planner
+                                onClick={() => handleTabChange('planner')}>{t('tabPlanner')}
                         </button>
                         <button className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
-                                onClick={() => handleTabChange('all')}>Alle Data
+                                onClick={() => handleTabChange('all')}>{t('tabAllData')}
                             ({displayedGaugeData.length})
                         </button>
                     </div>
@@ -2813,54 +3446,54 @@ const calculateRoutePlan = useCallback(() => {
                                     <thead ref={originalTheadRef}>
                                     {/* Header rows */}
                                     <tr>
-                                        <th rowSpan="2">Rivier</th>
-                                        <th rowSpan="2">Strecke</th>
-                                        <th rowSpan="2">Naam</th>
+                                        <th rowSpan="2">{t('headerRiver')}</th>
+                                        <th rowSpan="2">{t('headerSection')}</th>
+                                        <th rowSpan="2">{t('headerName')}</th>
                                         <th rowSpan="2" className="numeric">{giwLabel}<br/><span
-                                            style={{fontSize: '0.85em', fontWeight: 'normal'}}>(cm)</span></th>
+                                            style={{fontSize: '0.85em', fontWeight: 'normal'}}>{t('headerUnitCm')}</span></th>
                                         <th rowSpan="2" className="numeric">{tuGiwLabel}<br/><span
-                                            style={{fontSize: '0.85em', fontWeight: 'normal'}}>(cm)</span></th>
-                                        <th rowSpan="2" className="numeric"> Waarde <br/> <span
-                                            style={{fontSize: '0.85em', fontWeight: 'normal'}}>(Act., cm)</span></th>
-                                        <th rowSpan="2" className="numeric">Tendens<br/> <span
+                                            style={{fontSize: '0.85em', fontWeight: 'normal'}}>{t('headerUnitCm')}</span></th>
+                                        <th rowSpan="2" className="numeric"> {t('headerValue')} <br/> <span
+                                            style={{fontSize: '0.85em', fontWeight: 'normal'}}>{t('headerUnitActual')}</span></th>
+                                        <th rowSpan="2" className="numeric">{t('headerTrend')}<br/> <span
                                             style={{fontSize: '0.85em', fontWeight: 'normal'}}>(24h)</span></th>
-                                        <th rowSpan="2" className="numeric">Off. <br/> Vuist.<br/><span
-                                            style={{fontSize: '0.85em', fontWeight: 'normal'}}>(cm)</span></th>
-                                        <th colSpan="2" className="center">Correctie (cm)</th>
-                                        <th colSpan="2" className="center">Aang. <br/> Vuist. (cm)</th>
+                                        <th rowSpan="2" className="numeric">{t('headerOfficialRule')}<br/><span
+                                            style={{fontSize: '0.85em', fontWeight: 'normal'}}>{t('headerUnitCm')}</span></th>
+                                        <th colSpan="2" className="center">{t('headerCorrection')}</th>
+                                        <th colSpan="2" className="center">{t('headerAdjRule')} <br/> {t('headerUnitCm')}</th>
                                         <th rowSpan="2"
-                                            className="numeric"> {displayMode === 'draft' ? 'Diepgang' : 'Waarde'} <br/>
-                                            <span style={{fontSize: '0.85em', fontWeight: 'normal'}}>(Act., cm)</span>
+                                            className="numeric"> {displayMode === 'draft' ? t('headerActualDraft') : t('headerActualLevel')} <br/>
+                                            <span style={{fontSize: '0.85em', fontWeight: 'normal'}}>{t('headerUnitActual')}</span>
                                         </th>
                                         {/* Forecast Headers */}
                                         {forecastDates.map(dateStr => (
                                             <th key={`forecast-hdr-${dateStr}`} rowSpan="2"
                                                 className="numeric forecast-header">
-                                                {new Date(dateStr + 'T12:00:00Z').toLocaleDateString('nl-NL', {
+                                                {new Date(dateStr + 'T12:00:00Z').toLocaleDateString(locale, {
                                                     weekday: 'short',
                                                     day: 'numeric'
                                                 })} <br/>
                                                 <span style={{
                                                     fontSize: '0.85em',
                                                     fontWeight: 'normal'
-                                                }}> ({displayMode === 'draft' ? 'D' : 'S'}, cm) </span>
+                                                }}> {t('headerForecastValue', { mode: displayMode === 'draft' ? 'D' : 'S' })} </span>
                                             </th>
                                         ))}
                                         {forecastDates.length === 0 && dataStatus.status !== 'pending' &&
-                                            <th rowSpan="2" className="forecast-header">Geen Prognoses</th>}
+                                            <th rowSpan="2" className="forecast-header">{t('noForecasts')}</th>}
                                     </tr>
                                     <tr>
-                                        <th className="numeric">Op</th>
-                                        <th className="numeric">Af</th>
-                                        <th className="numeric">Op</th>
-                                        <th className="numeric">Af</th>
+                                        <th className="numeric">{t('headerUp')}</th>
+                                        <th className="numeric">{t('headerDown')}</th>
+                                        <th className="numeric">{t('headerUp')}</th>
+                                        <th className="numeric">{t('headerDown')}</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     {/* Loading/No Data Messages */}
                                     {dataStatus.status === 'pending' && (<tr>
                                         <td colSpan={13 + Math.max(1, forecastDates.length)}
-                                            style={{textAlign: 'center', fontStyle: 'italic', padding: '1rem'}}>Laden...
+                                            style={{textAlign: 'center', fontStyle: 'italic', padding: '1rem'}}>{t('loading')}
                                         </td>
                                     </tr>)}
                                     {dataStatus.status !== 'pending' && displayedGaugeData.length === 0 && (<tr>
@@ -2868,7 +3501,7 @@ const calculateRoutePlan = useCallback(() => {
                                             textAlign: 'center',
                                             fontStyle: 'italic',
                                             padding: '1rem'
-                                        }}> {activeTab === 'route' ? 'Selecteer een geldig traject of geen data beschikbaar voor traject.' : (Object.keys(gaugeApiData).length === 0 ? 'Geen API data geladen.' : 'Geen data gevonden voor de geselecteerde filter.')} </td>
+                                        }}> {activeTab === 'route' ? t('noDataForSelection') : (Object.keys(gaugeApiData).length === 0 ? t('noApiData') : t('noDataForFilter'))} </td>
                                     </tr>)}
                                     {/* Table Body Rows */}
                                     {displayedGaugeData.map(gauge => {
@@ -2914,7 +3547,7 @@ const calculateRoutePlan = useCallback(() => {
                                                 <td className="numeric">{gauge.depthAtGiw !== 'N/A' ? gauge.depthAtGiw : '-'}</td>
                                                 <td className={levelColumnClass}> {currentLevelDisplay !== null ? currentLevelDisplay.toFixed(0) : (apiData?.status === 'ERROR' ? `Error` : '-')}
                                                     <div
-                                                        className="time-display">{currentTime !== 'N/A' ? currentTime : (apiData?.status ? '' : 'Laden..')}</div>
+                                                        className="time-display">{currentTime !== 'N/A' ? currentTime : (apiData?.status ? '' : t('loading'))}</div>
                                                 </td>
                                                 <td className="numeric">{currentTrend}</td>
                                                 <td className="numeric">{officialRuleDisplay}</td>
@@ -3043,45 +3676,43 @@ const calculateRoutePlan = useCallback(() => {
 <div className="planner-settings-group">
 
 
-                                <h3>Route Planner Instellingen</h3>
+                                <h3>{t('plannerSettingsTitle')}</h3>
 
 
                                 {/* Start Date/Time */}
-                                <div className="control-group"><label htmlFor="startDate">Vertrek Datum/Tijd:</label>
+                                <div className="control-group"><label htmlFor="startDate">{t('departureTime')}:</label>
                                     <input type="datetime-local" id="startDate" value={plannerSettings.startDate}
                                            onChange={(e) => handlePlannerSettingChange('startDate', e.target.value)}/>
-                                    <button onClick={handleSetNow} className="now-button">Nu</button>
+                                    <button onClick={handleSetNow} className="now-button">{t('now')}</button>
                                 </div>
 
                                 {/* Speeds */}
-                                <div className="control-group"><label htmlFor="speedDownstream">Snelheid Stroomaf
-                                    (km/u):</label> <input type="number" id="speedDownstream" min="1"
+                                <div className="control-group"><label htmlFor="speedDownstream">{t('speedDownstream')}:</label> <input type="number" id="speedDownstream" min="1"
                                                            value={plannerSettings.speedDownstream}
                                                            onChange={(e) => handlePlannerSettingChange('speedDownstream', Number(e.target.value))}/>
                                 </div>
 
-                                <div className="control-group"><label htmlFor="speedUpstream">Snelheid Stroomop
-                                    (km/u):</label> <input type="number" id="speedUpstream" min="1"
+                                <div className="control-group"><label htmlFor="speedUpstream">{t('speedUpstream')}:</label> <input type="number" id="speedUpstream" min="1"
                                                            value={plannerSettings.speedUpstream}
                                                            onChange={(e) => handlePlannerSettingChange('speedUpstream', Number(e.target.value))}/>
                                 </div>
 
-                                <div className="control-group"><label htmlFor="speedCanal">Gem. Snelheim Main/RMD (km/u):</label>
+                                <div className="control-group"><label htmlFor="speedCanal">{t('speedCanal')}:</label>
                                     <input type="number" id="speedCanal" min="1" step="0.1"
                                            style={{width: "70px"}}
                                            value={plannerSettings.speedCanal}
                                            onChange={(e) => handlePlannerSettingChange('speedCanal', Number(e.target.value))}/>
-                                    <span style={{fontSize: '0.8em', color: '#aaa', marginLeft: '0.5rem'}}>(Van Mainz tot Kelheim)</span>
+                                    <span style={{fontSize: '0.8em', color: '#aaa', marginLeft: '0.5rem'}}>{t('speedCanalHint')}</span>
                                 </div>
 
                                 {/* Operational Mode */}
-                                <div className="control-group"><label htmlFor="operationalMode">Systeem:</label>
+                                <div className="control-group"><label htmlFor="operationalMode">{t('system')}:</label>
                                     <select id="operationalMode" value={plannerSettings.operationalMode}
                                             onChange={handleOperationalModeChange}>
-                                        <option value="A1">A1 (14 uur/dag)</option>
-                                        <option value="A2">A2 (18 uur/dag)</option>
-                                        <option value="B">B (24 uur/dag)</option>
-                                        <option value="Custom">Custom</option>
+                                        <option value="A1">{t('systemA1')}</option>
+                                        <option value="A2">{t('systemA2')}</option>
+                                        <option value="B">{t('systemB')}</option>
+                                        <option value="Custom">{t('systemCustom')}</option>
                                     </select> {plannerSettings.operationalMode === 'Custom' && (
                                         <input type="number" min="1" max="24" step="0.5"
                                                style={{width: "60px", marginLeft: "0.5rem"}}
@@ -3092,11 +3723,11 @@ const calculateRoutePlan = useCallback(() => {
                                             fontSize: '0.85em',
                                             color: '#aaa',
                                             marginLeft: '0.5rem'
-                                        }}> ({plannerSettings.operationalMode === 'A1' ? 14 : (plannerSettings.operationalMode === 'A2' ? 18 : 24)} uur/dag) </span>)}
+                                        }}> ({plannerSettings.operationalMode === 'A1' ? 14 : (plannerSettings.operationalMode === 'A2' ? 18 : 24)} {t('hoursPerDay')}) </span>)}
                                 </div>
                                 {/* Excluded Days */}
-                                <div className="control-group"><label>Uitgesloten Dagen:</label>
-                                    <div className="excluded-days-group"> {WEEKDAYS.map((day, index) => (
+                                <div className="control-group"><label>{t('excludedDays')}:</label>
+                                    <div className="excluded-days-group"> {weekdays.map((day, index) => (
                                         <label key={day} className="day-label"> <input type="checkbox"
                                                                                        checked={plannerSettings.excludedDays.includes(index)}
                                                                                        onChange={(e) => handleExcludedDayChange(index, e.target.checked)}/> {day}
@@ -3104,17 +3735,16 @@ const calculateRoutePlan = useCallback(() => {
                                 </div>
                                 {/* Uncertainty Toggle for Planner */}
                                 <div className="control-group"><label htmlFor="showUncertaintyPlanner"
-                                                                      className="toggle-label">Toon Prognose
-                                    Onzekerheid:</label> <input type="checkbox" id="showUncertaintyPlanner"
+                                                                      className="toggle-label">{t('showUncertaintyPlanner')}:</label> <input type="checkbox" id="showUncertaintyPlanner"
                                                                 checked={showUncertainty}
                                                                 onChange={handleUncertaintyToggle}/> <span
-                                    style={{fontSize: '0.8em', color: '#aaa'}}>(Indien beschikbaar)</span></div>
+                                    style={{fontSize: '0.8em', color: '#aaa'}}>{t('ifAvailable')}</span></div>
 
                                 {/* --- NEW Custom Segment Inputs --- */}
                                 <div style={{borderTop: '1px solid #444', paddingTop: '1rem', marginTop: '1rem'}}>
-                                    <h4>Optioneel Extra Trajectdeel</h4>
+                                    <h4>{t('optionalSegment')}</h4>
                                     <div className="control-group">
-                                        <label htmlFor="customSegmentKm">Extra Afstand (km):</label>
+                                        <label htmlFor="customSegmentKm">{t('extraDistance')}:</label>
                                         <input
                                             type="number"
                                             id="customSegmentKm"
@@ -3126,7 +3756,7 @@ const calculateRoutePlan = useCallback(() => {
                                         />
                                     </div>
                                     <div className="control-group">
-                                        <label htmlFor="customSegmentSpeed">Snelheid Extra Deel (km/u):</label>
+                                        <label htmlFor="customSegmentSpeed">{t('extraSpeed')}:</label>
                                         <input
                                             type="number"
                                             id="customSegmentSpeed"
@@ -3138,16 +3768,16 @@ const calculateRoutePlan = useCallback(() => {
                                         />
                                     </div>
                                     <div className="control-group">
-                                        <label htmlFor="customSegmentPosition">Positie Extra Deel:</label>
+                                        <label htmlFor="customSegmentPosition">{t('extraPosition')}:</label>
                                         <select
                                             id="customSegmentPosition"
                                             value={plannerSettings.customSegmentPosition}
                                             onChange={(e) => handlePlannerSettingChange('customSegmentPosition', e.target.value)}
                                         >
-                                            <option value="end">Na berekende route</option>
-                                            <option value="start">Vóór berekende route</option>
+                                            <option value="end">{t('posAfter')}</option>
+                                            <option value="start">{t('posBefore')}</option>
                                         </select>
-                                        <span style={{fontSize: '0.8em', color: '#aaa', marginLeft: '0.5rem'}}>(Voegt tijd toe aan begin/eind ETA)</span>
+                                        <span style={{fontSize: '0.8em', color: '#aaa', marginLeft: '0.5rem'}}>{t('posHint')}</span>
                                     </div>
                                 </div>
                                 {/* End Custom Segment Inputs */}
@@ -3160,7 +3790,7 @@ const calculateRoutePlan = useCallback(() => {
                                             // MODIFIED: Check for journey start/end name
                                         disabled={routePlanStatus === 'calculating' || !journey[selectedRiver]?.start || !journey[selectedRiver]?.end}
                                     >
-                                        {routePlanStatus === 'calculating' ? 'Berekenen...' : 'Bereken Maximale Diepgang'}
+                                        {routePlanStatus === 'calculating' ? t('calculating') : t('calculateMaxDraft')}
                                     </button>
                                 </div>
                             </div>
@@ -3173,25 +3803,24 @@ const calculateRoutePlan = useCallback(() => {
                                 marginTop: '1rem',
                                 border: '1px solid red',
                                 padding: '0.5rem'
-                            }}> Fout bij berekenen: {routePlanResult.error} </div>)}
+                            }}> {t('calculationError', { error: routePlanResult.error })} </div>)}
 
                             {/* Calculated Results */}
                             {routePlanStatus === 'calculated' && routePlanResult && !routePlanResult.error && (
                                 <div className="route-plan-results">
-                                    <h4>Route Plan Resultaat</h4>
+                                    <h4>{t('plannerResultTitle')}</h4>
                                     {/* Summary: Max Draft and Critical Point */}
 
                                     <div className="route-plan-summary">
-                                        Maximale Mogelijke
-                                        Diepgang: <strong>{routePlanResult.overallMaxDraft !== null ? `${routePlanResult.overallMaxDraft.toFixed(0)} cm` : 'N/A'}</strong>
+                                        {t('maxPossibleDraft')}: <strong>{routePlanResult.overallMaxDraft !== null ? `${routePlanResult.overallMaxDraft.toFixed(0)} cm` : 'N/A'}</strong>
                                         {/* NEW: Prioritize the specific limit reason over the generic critical point */}
                                         {routePlanResult.limitReason ? (
                                             <span style={{ fontSize: '0.9em', color: '#ccc' }}>
-                                                 (Beperkt door: {routePlanResult.limitReason.message})
+                                                 ({t('limitedBy')}: {routePlanResult.limitReason.message})
                                             </span>
                                         ) : routePlanResult.criticalPoint ? (
                                             <span style={{ fontSize: '0.9em', color: '#ccc' }}>
-                                                 (Beperkt door: {routePlanResult.criticalPoint.name} op KM {routePlanResult.criticalPoint.km}
+                                                 ({t('limitedBy')}: {routePlanResult.criticalPoint.name} op KM {routePlanResult.criticalPoint.km}
                                                 {showUncertainty && routePlanResult.criticalPoint.uncertaintyText ? ` ${routePlanResult.criticalPoint.uncertaintyText}` : ''})
                                             </span>
                                         ) : null}
@@ -3201,30 +3830,28 @@ const calculateRoutePlan = useCallback(() => {
                                         <div className="mgd-warning"> {routePlanResult.mgdWarning} </div>)}
 
                                     {/* Route Details Table */}
-                                    <h5>Route Details:</h5>
+                                    <h5>{t('routeDetails')}:</h5>
                                     {/* Scroll Wrapper for the table */}
                                     <div className="table-scroll-wrapper">
                                         <table className="original-table">
                                             <thead>
                                             <tr>
                                                 {/* Adjusted headers for new column */}
-                                                <th>KM</th>
-                                                <th>Naam</th>
-                                                <th>ETA</th>
-                                                <th>Prog.<br/>Niveau<br/>(cm)</th>
-                                                <th>Offset (cm)</th>
+                                                <th>{t('plannerHeaderKm')}</th>
+                                                <th>{t('plannerHeaderName')}</th>
+                                                <th>{t('plannerHeaderEta')}</th>
+                                                <th>{t('plannerHeaderForecastLevel')}</th>
+                                                <th>{t('plannerHeaderOffset')}</th>
                                                 {/* NEW Header for Corrected Rule */}
-                                                <th>Aang.<br/>Vuist.<br/>(cm)</th>
-                                                <th>Max<br/>Diepgang<br/>(cm)</th>
-                                                <th>Notities</th>
+                                                <th>{t('plannerHeaderAdjRule')}</th>
+                                                <th>{t('plannerHeaderMaxDraft')}</th>
+                                                <th>{t('plannerHeaderNotes')}</th>
                                             </tr>
                                             </thead>
                                             <tbody>
                                             {/* Message if no points calculated */}
                                             {routePlanResult.points.length === 0 && (<tr>
-                                                <td colSpan="8" style={{textAlign: 'center', fontStyle: 'italic'}}>Geen
-                                                    routepunten berekend (mogelijk geen prognoses beschikbaar voor
-                                                    ETA's).
+                                                <td colSpan="8" style={{textAlign: 'center', fontStyle: 'italic'}}>{t('noRoutePoints')}
                                                 </td>
                                             </tr>)}
                                             {/* Iterate through calculated points */}
@@ -3237,12 +3864,12 @@ const calculateRoutePlan = useCallback(() => {
                                                            rel="noopener noreferrer"
                                                            className="gauge-link">{point.name}</a></td>
                                                     <td className="eta-time">
-                                                        {point.eta.toLocaleDateString('nl-NL', {
+                                                        {point.eta.toLocaleDateString(locale, {
                                                             weekday: 'short',
                                                             day: 'numeric',
                                                             month: 'short'
                                                         })} {' '}
-                                                        {point.eta.toLocaleTimeString('nl-NL', {
+                                                        {point.eta.toLocaleTimeString(locale, {
                                                             hour: '2-digit',
                                                             minute: '2-digit'
                                                         })}
@@ -3283,17 +3910,23 @@ const calculateRoutePlan = useCallback(() => {
 
                 {/* Footer */}
                 <footer>
-                    <div>Data API per: {lastUpdated ? lastUpdated.toLocaleString('nl-NL', {
+                    <div>{t('footerApiDate')}: {lastUpdated ? lastUpdated.toLocaleString(locale, {
                         dateStyle: 'short',
                         timeStyle: 'short'
-                    }) : 'Nog niet geladen'}</div>
+                    }) : t('notLoadedYet')}</div>
                     <div>RDD Calculator &copy; FilipJFZ</div>
                 </footer>
             </div> // End .container
         );
     }
     // --- Render the App ---
-    ReactDOM.render(<RhineDraftCalculator/>, document.getElementById('root'));
+    // I18N: Wrap the main component in the I18nProvider
+    ReactDOM.render(
+        <I18nProvider>
+            <RhineDraftCalculator/>
+        </I18nProvider>, 
+        document.getElementById('root')
+    );
 
 </script>
 </body>
