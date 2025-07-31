@@ -1433,7 +1433,7 @@
     };
 
 
-    // --- React Component ---
+// --- React Component ---
 function RhineDraftCalculator() {
         // --- State ---
         const [allGaugeStaticData, setAllGaugeStaticData] = useState([]);
@@ -2607,6 +2607,9 @@ function RhineDraftCalculator() {
 
 
         // --- Render ---
+        const giwLabel = selectedRiver === 'Donau' ? 'RNW' : 'GIW';
+        const tuGiwLabel = selectedRiver === 'Donau' ? 'TuRNW' : 'TuGIW';
+
         return (
             <div className="container">
                 {/* Fixed Header Container (Conditional) */}
@@ -2809,9 +2812,9 @@ function RhineDraftCalculator() {
                                         <th rowSpan="2">Rivier</th>
                                         <th rowSpan="2">Strecke</th>
                                         <th rowSpan="2">Naam</th>
-                                        <th rowSpan="2" className="numeric">GIW<br/><span
+                                        <th rowSpan="2" className="numeric">{giwLabel}<br/><span
                                             style={{fontSize: '0.85em', fontWeight: 'normal'}}>(cm)</span></th>
-                                        <th rowSpan="2" className="numeric">TuGIW<br/><span
+                                        <th rowSpan="2" className="numeric">{tuGiwLabel}<br/><span
                                             style={{fontSize: '0.85em', fontWeight: 'normal'}}>(cm)</span></th>
                                         <th rowSpan="2" className="numeric"> Waarde <br/> <span
                                             style={{fontSize: '0.85em', fontWeight: 'normal'}}>(Act., cm)</span></th>
@@ -3276,7 +3279,6 @@ function RhineDraftCalculator() {
             </div> // End .container
         );
     }
-
     // --- Render the App ---
     ReactDOM.render(<RhineDraftCalculator/>, document.getElementById('root'));
 
