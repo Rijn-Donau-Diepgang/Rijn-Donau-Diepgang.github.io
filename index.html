@@ -302,16 +302,16 @@
         .original-table > thead th {
             background-color: #1e1e1e; /* Header background */
             border-bottom: 1px solid #555;
-            padding: 0.5rem 0.4rem; /* <<< REDUCED PADDING (Original) */
+            padding: 0.6rem 0.4rem; /* <<< CHANGED: Increased vertical padding for wrapping */
             text-align: left;
-            white-space: nowrap; /* Keep header text on one line */
-            overflow: visible; /* Allow content to flow for auto sizing */
+            white-space: normal; /* <<< CHANGED: Allow text to wrap */
+            overflow: visible;
             text-overflow: clip;
             border-left: 1px solid #333;
             vertical-align: middle;
-            font-size: 0.8rem; /* <<< REDUCED FONT SIZE (Original) */
+            font-size: 0.8rem;
             font-weight: bold;
-            line-height: 1.2; /* Adjust line height for smaller font */
+            line-height: 1.3; /* <<< CHANGED: Increased for better multi-line readability */
         }
 
         .original-table > thead th:first-child {
@@ -669,16 +669,16 @@
         .fixed-header-container th {
             background-color: #1e1e1e;
             border-bottom: 1px solid #555;
-            padding: 0.5rem 0.4rem; /* Original reduced padding */
+            padding: 0.6rem 0.4rem; /* <<< CHANGED: Increased vertical padding */
             text-align: left;
-            white-space: nowrap;
+            white-space: normal; /* <<< CHANGED: Allow text to wrap */
             overflow: visible;
             text-overflow: clip;
             border-left: 1px solid #333;
             vertical-align: middle;
-            font-size: 0.8rem; /* Original reduced font size */
+            font-size: 0.8rem;
             font-weight: bold;
-            line-height: 1.2;
+            line-height: 1.3; /* <<< CHANGED: Increased line height */
             border-top: none;
         }
 
@@ -1049,7 +1049,7 @@ const translations = {
         maxPossibleDraft: "Maximale Mogelijke Diepgang",
         limitedBy: "Beperkt door",
         mgdWarningText: "WAARSCHUWING: De berekende diepgang van {calculatedDraft} cm overschrijdt de MGD voor {mgdName} ({mgdDraft} cm). Varen met deze diepgang is op eigen risico.",
-        canalLimitReason: "Rijn-Main-Donaukanaal (max. 250 cm)",
+        canalLimitReason: "(boven)Main (max. 250 cm)",
         routeDetails: "Route Details",
         plannerHeaderKm: "KM",
         plannerHeaderName: "Naam",
@@ -1158,7 +1158,7 @@ const translations = {
         maxPossibleDraft: "Maximum Possible Draft",
         limitedBy: "Limited by",
         mgdWarningText: "WARNING: The calculated draft of {calculatedDraft} cm exceeds the MGD for {mgdName} ({mgdDraft} cm). Sailing at this draft is at your own risk.",
-        canalLimitReason: "Rhine-Main-Danube Canal (max 250 cm)",
+        canalLimitReason: "(upper) Main (max 250 cm)",
         routeDetails: "Route Details",
         plannerHeaderKm: "KM",
         plannerHeaderName: "Name",
@@ -1267,7 +1267,7 @@ const translations = {
         maxPossibleDraft: "Maximal möglicher Tiefgang",
         limitedBy: "Begrenzt durch",
         mgdWarningText: "WARNUNG: Der berechnete Tiefgang von {calculatedDraft} cm überschreitet die MGD für {mgdName} ({mgdDraft} cm). Fahrt auf eigene Gefahr.",
-        canalLimitReason: "Rhein-Main-Donau-Kanal (max. 250 cm)",
+        canalLimitReason: "(ober)Main (max. 250 cm)",
         routeDetails: "Routendetails",
         plannerHeaderKm: "KM",
         plannerHeaderName: "Name",
@@ -1376,7 +1376,7 @@ const translations = {
         maxPossibleDraft: "Tirant d'eau maximum possible",
         limitedBy: "Limité par",
         mgdWarningText: "AVERTISSEMENT : Le tirant d'eau calculé de {calculatedDraft} cm dépasse le MGD pour {mgdName} ({mgdDraft} cm). La navigation avec ce tirant d'eau est à vos propres risques.",
-        canalLimitReason: "Canal Rhin-Main-Danube (max 250 cm)",
+        canalLimitReason: "(haute) Main (max. 250 cm)",
         routeDetails: "Détails de l'itinéraire",
         plannerHeaderKm: "KM",
         plannerHeaderName: "Nom",
@@ -1485,7 +1485,7 @@ const translations = {
         maxPossibleDraft: "Максимально возможная осадка",
         limitedBy: "Ограничено",
         mgdWarningText: "ВНИМАНИЕ: Расчетная осадка {calculatedDraft} см превышает MGD для {mgdName} ({mgdDraft} см). Движение с такой осадкой на ваш страх и риск.",
-        canalLimitReason: "Канал Рейн-Майн-Дунай (макс. 250 см)",
+        canalLimitReason: "(верх.) Майн (макс. 250 см)",
         routeDetails: "Детали маршрута",
         plannerHeaderKm: "КМ",
         plannerHeaderName: "Название",
