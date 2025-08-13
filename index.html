@@ -2739,11 +2739,11 @@
             case 'Pannerdens Kanaal':
             case 'IJssel':
                 publishHour = 7;
-                thresholdHours = 48;
+                thresholdHours = 48.1;
                 break;
             case 'Donau':
                 publishHour = 5;
-                thresholdHours = 24;
+                thresholdHours = 24.1;
                 break;
             default:
                 return null; // No uncertainty rules for this river
@@ -2759,7 +2759,7 @@
         }
 
         // 3. Calculate the difference in hours from publication to the forecast date
-        const forecastDate = new Date(forecastDateStr + 'T12:00:00Z'); // Use noon for a stable comparison point
+        const forecastDate = new Date(forecastDateStr + 'T00:00:00Z'); // Use midnight for correct threshold calculation
         const diffMs = forecastDate.getTime() - mostRecentPublishTime.getTime();
         const diffHours = diffMs / (1000 * 60 * 60);
 
@@ -3276,7 +3276,7 @@ function RhineDraftCalculator() {
         const [routePlanResult, setRoutePlanResult] = useState(null);
         const [routePlanStatus, setRoutePlanStatus] = useState('idle');
                 const [selectedRiver, setSelectedRiver] = useState(() => getCookie('selectedRiverContext') || 'all');
-        const [forecastBaseTime, setForecastBaseTime] = useState(null);
+        // // const [forecastBaseTime, setForecastBaseTime] = useState(null); // Removed for gauge-specific logic // Removed for gauge-specific logic
                 const [plannerSettings, setPlannerSettings] = useState(() => {
             const savedSettings = getCookie('rhinePlannerSettings');
             const defaultValues = {
@@ -3569,7 +3569,7 @@ function RhineDraftCalculator() {
                 if (earliestForecastDateTime) {
                     const hours = String(earliestForecastDateTime.getHours()).padStart(2, '0');
                     const minutes = String(earliestForecastDateTime.getMinutes()).padStart(2, '0');
-                    setForecastBaseTime(`${hours}:${minutes}`);
+                    // // setForecastBaseTime(`${hours}:${minutes}`); // Removed for gauge-specific logic // Removed for gauge-specific logic
 
                     let currentDate = new Date(earliestForecastDateTime.getTime());
                     // Loop to generate forecast dates, starting with the date of the earliest forecast.
@@ -4025,7 +4025,28 @@ function RhineDraftCalculator() {
             return bestTime;
         }
 
-        const forecastBottlenecks = useMemo(() => {
+
+const getGaugeBaseTime = (apiData) => {
+    if (!apiData || !apiData.forecasts) return null;
+    const sortedDates = Object.keys(apiData.forecasts).sort();
+    if (sortedDates.length === 0) return null;
+    // Find the first day that has valid time entries
+    for (const dateStr of sortedDates) {
+        const forecastsForDay = apiData.forecasts[dateStr];
+        if (forecastsForDay) {
+            const sortedTimes = Object.keys(forecastsForDay)
+                .filter(t => t.match(/^\d{2}:\d{2}$/))
+                .sort();
+            if (sortedTimes.length > 0) {
+                return sortedTimes[0]; // Return the earliest time of the earliest day
+            }
+        }
+    }
+    return null;
+};
+
+const forecastBottlenecks = useMemo(() => {
+
             if (activeTab !== 'route' || forecastDates.length === 0 || displayedGaugeDataMaxDraft.length === 0) return [];
             return forecastDates.map(dateStr => {
                 let criticalGauge = null;
@@ -4046,7 +4067,8 @@ function RhineDraftCalculator() {
                     let currentValueSource = null;
                     const forecastsForDate = apiData?.forecasts?.[dateStr];
                     if (forecastsForDate && Object.keys(forecastsForDate).length > 0) {
-                        const selectedTime = getBestForecastTime(forecastsForDate, forecastBaseTime);
+                        const gaugeBaseTime = getGaugeBaseTime(apiData);
+const selectedTime = getBestForecastTime(forecastsForDate, gaugeBaseTime);
                         const dailySlot = selectedTime ? forecastsForDate[selectedTime] : null;
                         if (dailySlot && dailySlot.value !== undefined && dailySlot.value !== null) {
                             currentForecastLevel = dailySlot.value;
@@ -4135,7 +4157,7 @@ function RhineDraftCalculator() {
                     uncertainty: uncertaintyText
                 };
             });
-        }, [activeTab, forecastDates, displayedGaugeDataMaxDraft, calculateDraft, showUncertainty, todayStr, getBestForecastTime, diffDays, forecastBaseTime]);
+        }, [activeTab, forecastDates, displayedGaugeDataMaxDraft, calculateDraft, showUncertainty, todayStr, getBestForecastTime, diffDays]);
 
 
         const calculateRoutePlan = useCallback(() => {
@@ -4663,7 +4685,8 @@ function RhineDraftCalculator() {
                                                     const forecastsForDate = apiData?.forecasts?.[dateStr];
 
                                                     if (forecastsForDate && Object.keys(forecastsForDate).length > 0) {
-                                                        const selectedTime = getBestForecastTime(forecastsForDate, forecastBaseTime);
+                                                        const gaugeBaseTime = getGaugeBaseTime(apiData);
+const selectedTime = getBestForecastTime(forecastsForDate, gaugeBaseTime);
                                                         forecastSlot = selectedTime ? forecastsForDate[selectedTime] : null;
                                                         if (forecastSlot && forecastSlot.value !== undefined && forecastSlot.value !== null) {
                                                             forecastLevel = forecastSlot.value;
