@@ -1391,6 +1391,7 @@ const translations = {
         "customShipDeleted": "Aangepast schip '{name}' verwijderd.",
         "crew": "Bemanning",
         "loadingWarningMinDraft": "Beschikbare diepgang is lager dan de minimale diepgang van het schip van {min_draft}m.",
+        "loadingWarningMinDraftExtended": "Dit kan variëren. Aanpassingen aan de tunnel kunnen een minimale diepgang tot 60% van de schroefdiameter mogelijk maken, ten koste van de efficiëntie.",
         "loadingWarningMDKDraft": "Waarschuwing: Ingediende diepgang van {input_draft}m overschrijdt de 2,50m limiet op de Main.",
         "notAllowedOnRoute": "Niet toegestaan op deze route:",
         "warnings": "Waarschuwingen:",
@@ -1428,12 +1429,12 @@ const translations = {
         "constraintRuhrortUnknown": "Peil Duisburg-Ruhrort onbekend, breed duwstel (>22.90m) mogelijk niet toegestaan.",
         "constraintRuhrortLow": "Breed duwstel (>22.90m) niet toegestaan, peil Duisburg-Ruhrort < 210cm (huidig: {currentLevel}cm).",
         "constraintLobithLowWide": "Breed duwstel (>22.90m) niet toegestaan, peil Lobith < 750cm (huidig: {currentLevel}cm).",
-        "comboNamePushedDanube1": "duwstel Donau (1 bak)",
-        "comboNamePushedDanube2": "duwstel Donau (2 bakken)",
-        "comboNamePushedDanube4": "duwstel Donau (4 bakken)",
-        "comboNamePushedDanube6": "duwstel Donau (6 bakken)",
-        "comboNamePushedRhine4": "duwstel Rijn (4 bakken)",
-        "comboNamePushedRhine6": "duwstel Rijn (6 bakken)",
+        "comboNamePushedDanube1": "Duwstel Donau (1 bak)",
+        "comboNamePushedDanube2": "Duwstel Donau (2 bakken)",
+        "comboNamePushedDanube4": "Duwstel Donau (4 bakken)",
+        "comboNamePushedDanube6": "Duwstel Donau (6 bakken)",
+        "comboNamePushedRhine4": "Duwstel Rijn (4 bakken)",
+        "comboNamePushedRhine6": "Duwstel Rijn (6 bakken)",
         "comboNameJohannaPlus2": "Koppelverband Rijn/Donau + 2 Rijn bakken",
         "comboNameAnimoPlus2": "Extra lang GMS, zwaar + 2 Rijn bakken",
         "comboNameTanker1": "Tankerduwstel (1 bak)",
@@ -1600,6 +1601,7 @@ const translations = {
         "customShipDeleted": "Custom ship '{name}' deleted.",
         "crew": "Crew",
         "loadingWarningMinDraft": "Available draft is below ship's minimum draft of {min_draft}m.",
+        "loadingWarningMinDraftExtended": "This may vary. Adjustments can be made to the propeller tunnel to allow a minimum draft of up to 60% of the propeller diameter at the cost of efficiency.",
         "loadingWarningMDKDraft": "Warning: Input draft of {input_draft}m exceeds 2.50m limit on Main river.",
         "notAllowedOnRoute": "Not allowed on this route:",
         "warnings": "Warnings:",
@@ -1809,6 +1811,7 @@ const translations = {
         "customShipDeleted": "Eigenes Schiff '{name}' gelöscht.",
         "crew": "Besatzung",
         "loadingWarningMinDraft": "Verfügbarer Tiefgang liegt unter dem Mindesttiefgang des Schiffes von {min_draft}m.",
+        "loadingWarningMinDraftExtended": "Dies kann variieren. Anpassungen am Tunnel können einen Mindesttiefgang von bis zu 60 % des Propellerdurchmessers auf Kosten der Effizienz ermöglichen.",
         "loadingWarningMDKDraft": "Warnung: Eingegebener Tiefgang von {input_draft}m überschreitet 2,50m-Limit auf dem Main.",
         "notAllowedOnRoute": "Auf dieser Route nicht erlaubt:",
         "warnings": "Warnungen:",
@@ -2018,6 +2021,7 @@ const translations = {
         "customShipDeleted": "Bateau personnalisé '{name}' supprimé.",
         "crew": "Équipage",
         "loadingWarningMinDraft": "Le tirant d'eau disponible est inférieur au tirant d'eau minimum du bateau de {min_draft}m.",
+        "loadingWarningMinDraftExtended": "Cela peut varier. Des ajustements au tunnel d'hélice peuvent permettre un tirant d'eau minimum jusqu'à 60% du diamètre de l'hélice, au détriment de l'efficacité.",
         "loadingWarningMDKDraft": "Avertissement: Le tirant d'eau de {input_draft}m dépasse la limite de 2,50m sur le Main.",
         "notAllowedOnRoute": "Non autorisé sur cet itinéraire :",
         "warnings": "Avertissements :",
@@ -2227,6 +2231,7 @@ const translations = {
         "customShipDeleted": "Пользовательское судно '{name}' удалено.",
         "crew": "Экипаж",
         "loadingWarningMinDraft": "Доступная осадка меньше минимальной осадки судна {min_draft}м.",
+        "loadingWarningMinDraftExtended": "Это значение может варьироваться. Модификации туннеля гребного винта могут позволить уменьшить минимальную осадку до 60% от диаметра винта за счет снижения эффективности.",
         "loadingWarningMDKDraft": "Внимание: Введенная осадка {input_draft}м превышает лимит в 2,50м на реке Майн.",
         "notAllowedOnRoute": "Не разрешено на этом маршруте:",
         "warnings": "Предупреждения:",
@@ -3312,7 +3317,7 @@ function RhineDraftCalculator() {
         const [nextRefreshTime, setNextRefreshTime] = useState(null);
         const refreshButtonRef = useRef(null);
         const [journey, setJourney] = useState(() => getCookie('riverJourneys') || { 'Rijn/Waal': {start: 'Tiel', end: 'Emmerich'}, 'Donau': {start: 'Kelheim', end: 'Passau Donau'}, 'IJssel': {start: 'Katerveer', end: 'IJsselkop'}, 'all': { start: null, end: null } });
-        const [activeTab, setActiveTab] = useState('planner');
+        const [activeTab, setActiveTab] = useState('route');
         const [displayMode, setDisplayMode] = useState(() => getCookie('rhineDisplayMode') || 'draft');
         const [showUncertainty, setShowUncertainty] = useState(() => getCookie('rhineShowUncertainty') ?? false);
         const defaultStartDate = useMemo(() => {
@@ -5043,7 +5048,16 @@ const selectedTime = getBestForecastTime(forecastsForDate, gaugeBaseTime);
                                                                     style={{ width: `${barPercent}%` }}
                                                                 ></div>
                                                             </div>
-                                                            {ship.isAllowed && isBelowMinDraft && <div className="loading-warning">{t('loadingWarningMinDraft', {min_draft: ship.min_draft.toFixed(2)})}</div>}
+                                                            {ship.isAllowed && isBelowMinDraft && (
+                                                                <div className="loading-warning">
+                                                                    {t('loadingWarningMinDraft', {min_draft: ship.min_draft.toFixed(2)})}
+                                                                    {!ship.is_combo && (
+                                                                        <span style={{ display: 'block', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                                                                            {t('loadingWarningMinDraftExtended')}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                         {ship.constraintWarnings.length > 0 && (
                                                             <div className="ship-constraints">
