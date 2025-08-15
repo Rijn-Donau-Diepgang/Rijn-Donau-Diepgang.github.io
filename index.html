@@ -10,7 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.2/babel.min.js"></script>
     <style>
-        /* --- CSS is unchanged, so it is omitted for brevity --- */
+
         /* --- Base & Layout (Combined - Using Original Base) --- */
         html, body {
             margin: 0;
@@ -286,7 +286,7 @@
             flex-shrink: 0; /* Prevent shrinking */
         }
 
-        /* --- Original Table (Styles from FIRST block - DESIRED STATE) --- */
+
         /* These apply unless overridden by .route-plan-results above */
         table.original-table {
             width: 100%;
@@ -296,7 +296,7 @@
             table-layout: fixed; /* KEY: Use fixed layout */
         }
 
-        /* Original Table Header / Visibility (from FIRST block) */
+
         .original-table > thead {
             visibility: visible; /* Default state */
         }
@@ -305,20 +305,20 @@
             visibility: hidden !important; /* Hide when fixed header is active */
         }
 
-        /* Original Header Cells (thead th) - Base Styles (from FIRST block) */
+
         .original-table > thead th {
             background-color: #1e1e1e; /* Header background */
             border-bottom: 1px solid #555;
-            padding: 0.6rem 0.4rem; /* <<< CHANGED: Increased vertical padding for wrapping */
+            padding: 0.6rem 0.4rem;
             text-align: left;
-            white-space: normal; /* <<< CHANGED: Allow text to wrap */
+            white-space: normal;
             overflow: visible;
             text-overflow: clip;
             border-left: 1px solid #333;
             vertical-align: middle;
             font-size: 0.8rem;
             font-weight: bold;
-            line-height: 1.3; /* <<< CHANGED: Increased for better multi-line readability */
+            line-height: 1.3;
         }
 
         .original-table > thead th:first-child {
@@ -342,7 +342,7 @@
             /* Default width (Original) */
             --col-default-width: 60px;
 
-            /* Column-specific widths (FROM FIRST BLOCK - DESIRED ORIGINAL STATE) */
+
             --col-1-width: 80px; /* Rivier */
             --col-2-width: 90px; /* Strecke */
             --col-3-width: 95px; /* Naam */
@@ -358,7 +358,7 @@
             --col-13-width: 100px; /* Diepgang/Waarde Actueel */
             --forecast-width: 45px; /* Forecast Columns */
 
-            /* NEW: Font size for table body cells */
+
             --table-body-font-size: 0.9rem; /* Adjust this value easily */
 
             /* Route Plan Table Widths */
@@ -367,7 +367,7 @@
             --rp-col-eta-width: 140px;
             --rp-col-level-width: 70px;
             --rp-col-offset-width: 65px; /* Offset Column */
-            /* NEW: Width for Corrected Rule column */
+
             --rp-col-rule-width: 75px;
             --rp-col-draft-width: 90px;
             --rp-col-notes-width: 120px;
@@ -381,7 +381,7 @@
             white-space: normal; /* Allow wrapping */
             border-left: 1px solid #333;
             vertical-align: middle;
-            /* USE VARIABLE: Apply the font size variable */
+
             font-size: var(--table-body-font-size);
             line-height: 1.3; /* Original line height */
         }
@@ -410,7 +410,7 @@
             width: auto; /* Let specific widths below take precedence */
         }
 
-        /* --- Column Width Definitions (Applied to ORIGINAL table - From FIRST block) --- */
+
         /* Column 1 - Rivier */
         .original-table > thead th:nth-child(1), .original-table > tbody td:nth-child(1) {
             min-width: var(--col-1-width);
@@ -555,7 +555,7 @@
         }
 
         /* Offset */
-        /* NEW: Corrected Rule Column (index 6) */
+
         .route-plan-results .original-table th:nth-child(6), .route-plan-results .original-table td:nth-child(6) {
             width: var(--rp-col-rule-width);
             min-width: var(--rp-col-rule-width);
@@ -564,7 +564,7 @@
         }
 
         /* Corrected Rule */
-        /* SHIFTED: Max Draft Column (now index 7) */
+
         .route-plan-results .original-table th:nth-child(7), .route-plan-results .original-table td:nth-child(7) {
             width: var(--rp-col-draft-width);
             min-width: var(--rp-col-draft-width);
@@ -573,7 +573,7 @@
         }
 
         /* Max Draft */
-        /* SHIFTED: Notes Column (now index 8) */
+
         .route-plan-results .original-table th:nth-child(8), .route-plan-results .original-table td:nth-child(8) {
             width: var(--rp-col-notes-width);
             min-width: var(--rp-col-notes-width);
@@ -595,7 +595,7 @@
         /* Styles for table *inside* planner results (overrides general styles) */
         .route-plan-results .original-table th,
         .route-plan-results .original-table td {
-            /* USE VARIABLE: Apply the font size variable here too */
+
             font-size: var(--table-body-font-size);
             padding: 0.4rem 0.5rem;
         }
@@ -620,9 +620,9 @@
         .route-plan-results .original-table > tbody td:nth-child(1), /* KM */
         .route-plan-results .original-table > tbody td:nth-child(4), /* Level */
         .route-plan-results .original-table > tbody td:nth-child(5), /* Offset */
-            /* NEW: Corrected Rule Alignment */
+
         .route-plan-results .original-table > tbody td:nth-child(6), /* Corrected Rule */
-            /* SHIFTED: Max Draft Alignment */
+
         .route-plan-results .original-table > tbody td:nth-child(7) /* Max Draft */
         {
             text-align: right;
@@ -631,7 +631,7 @@
         /* Left aligned columns */
         .route-plan-results .original-table > tbody td:nth-child(2), /* Name */
         .route-plan-results .original-table > tbody td:nth-child(3), /* ETA */
-            /* SHIFTED: Notes Alignment */
+
         .route-plan-results .original-table > tbody td:nth-child(8) /* Notes */
         {
             text-align: left;
@@ -647,7 +647,6 @@
         }
 
 
-        /* --- Fixed Header Clone Container (Styles from FIRST block) --- */
         .fixed-header-container {
             position: fixed;
             top: 0;
@@ -672,20 +671,20 @@
             width: 100%;
         }
 
-        /* Cloned Header Cells - Mirror Original Styles (from FIRST block) */
+
         .fixed-header-container th {
             background-color: #1e1e1e;
             border-bottom: 1px solid #555;
-            padding: 0.6rem 0.4rem; /* <<< CHANGED: Increased vertical padding */
+            padding: 0.6rem 0.4rem;
             text-align: left;
-            white-space: normal; /* <<< CHANGED: Allow text to wrap */
+            white-space: normal;
             overflow: visible;
             text-overflow: clip;
             border-left: 1px solid #333;
             vertical-align: middle;
             font-size: 0.8rem;
             font-weight: bold;
-            line-height: 1.3; /* <<< CHANGED: Increased line height */
+            line-height: 1.3;
             border-top: none;
         }
 
@@ -707,7 +706,7 @@
 
         /* Add top border like original */
 
-        /* Apply ORIGINAL table widths to fixed header (from FIRST block) */
+
         .fixed-header-container th:nth-child(1) {
             min-width: var(--col-1-width);
             width: var(--col-1-width);
@@ -788,7 +787,6 @@
             min-width: var(--forecast-width);
             width: var(--forecast-width);
         }
-
 
         /* --- Highlights & Cell Content Styling (Merged) --- */
         .critical-row td {
@@ -971,7 +969,7 @@
             cursor: not-allowed;
         }
 
-        /* --- NEW: Cargo Capacity Tab Styles --- */
+
         .cargo-controls {
             display: flex;
             flex-direction: column;
@@ -1144,7 +1142,7 @@
              background-color: #880000;
         }
 
-        /* --- NEW: Custom Ship Modal Styles --- */
+
         .modal-backdrop {
             position: fixed;
             top: 0;
@@ -1262,7 +1260,7 @@
 <script type="text/babel">
     const {useState, useEffect, useCallback, useRef, useMemo, createContext, useContext} = React;
 
-    // --- I18N: Omitted for Brevity as requested ---
+
 const translations = {
     "nl": {
         "appTitle": "Diepgang Calculator",
@@ -2531,7 +2529,7 @@ const translations = {
     }
 
     // --- API Fetch Function ---
-    async function fetchConsolidatedData(force = false) { /* ... Unchanged ... */
+    async function fetchConsolidatedData(force = false) {
         const url = `${API_URL}?t=${Date.now()}`;
         console.log(`Fetching data from: ${url}`);
         try {
@@ -2576,7 +2574,7 @@ const translations = {
         return timeString || "N/A";
     }
 
-    function getGaugeUrl(gauge) { /* ... Unchanged ... */
+    function getGaugeUrl(gauge) {
         if (!gauge) return '#';
         const gaugeName = gauge.name;
         const gaugeRiver = gauge.river;
@@ -2619,7 +2617,7 @@ const translations = {
         return '#';
     }
 
-    function diffDays(dateStr1, dateStr2) { /* ... Unchanged ... */
+    function diffDays(dateStr1, dateStr2) {
         try {
             const date1 = new Date(Date.UTC(parseInt(dateStr1.substring(0, 4)), parseInt(dateStr1.substring(5, 7)) - 1, parseInt(dateStr1.substring(8, 10)), 12, 0, 0));
             const date2 = new Date(Date.UTC(parseInt(dateStr2.substring(0, 4)), parseInt(dateStr2.substring(5, 7)) - 1, parseInt(dateStr2.substring(8, 10)), 12, 0, 0));
@@ -2631,8 +2629,8 @@ const translations = {
         }
     }
 
-    // --- Date/Time Helper for Operational Time (Unchanged) ---
-    function addOperationalTime(startDate, durationHours, operationalHoursPerDay, excludedDaysOfWeek) { /* ... Unchanged ... */
+
+    function addOperationalTime(startDate, durationHours, operationalHoursPerDay, excludedDaysOfWeek) {
         if (operationalHoursPerDay <= 0 || durationHours <= 0) return startDate;
 
         let currentTime = new Date(startDate.getTime());
@@ -2704,8 +2702,8 @@ const translations = {
         return currentTime;
     }
 
-    // --- Get Forecast for specific Date/Time (Unchanged) ---
-    function getForecastForDateTime(apiData, targetDateTime) { /* ... Unchanged ... */
+
+    function getForecastForDateTime(apiData, targetDateTime) {
         if (!apiData || !targetDateTime || isNaN(targetDateTime.getTime())) return null;
         const targetYear = targetDateTime.getFullYear();
         const targetMonth = String(targetDateTime.getMonth() + 1).padStart(2, '0');
@@ -2778,8 +2776,8 @@ const translations = {
         return null;
     }
 
-    // --- NEW: Calculate Forecast Uncertainty based on river and publication time (Unchanged) ---
-    function calculateForecastUncertainty(gauge, forecastDateStr, now) { /* ... Unchanged ... */
+
+    function calculateForecastUncertainty(gauge, forecastDateStr, now) {
         if (!gauge || !gauge.river || !forecastDateStr || !now) {
             return null;
         }
@@ -2829,8 +2827,8 @@ const translations = {
             return 20; // ±20 cm
         }
     }
-    // --- NEW: Standalone Pathfinding Helper Function (Unchanged) ---
-    const findRoutePath = (startGaugeName, endGaugeName, allGauges, speeds) => { /* ... Unchanged ... */
+
+    const findRoutePath = (startGaugeName, endGaugeName, allGauges, speeds) => {
         if (!startGaugeName || !endGaugeName) return null;
 
         const gaugeMap = new Map(allGauges.map(g => [g.name, g]));
@@ -2939,7 +2937,6 @@ const translations = {
 
         return (path.length > 0 && path[0].name === startGaugeName) ? path : null;
     };
-
 
     // --- SHIP DATA AND CALCULATION LOGIC ---
 // §19.02 – Motorschiffe & Schubboote (GMS)
@@ -3252,8 +3249,6 @@ const CREW_KVB_STUFE5 = { // Schubboot + 3+ Schubleichter / Motorschiff + 2+ Sch
             return { allowed: isAllowed, warnings: Array.from(warnings) };
         };
 
-
-
 // --- React Component ---
 function RhineDraftCalculator() {
         const { t, locale, weekdays, language, setLanguage } = useContext(I18nContext);
@@ -3329,7 +3324,6 @@ function RhineDraftCalculator() {
             const minutes = String(now.getMinutes()).padStart(2, '0');
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }, []);
-
 
         const [routePlanResult, setRoutePlanResult] = useState(null);
         const [routePlanStatus, setRoutePlanStatus] = useState('idle');
@@ -3434,7 +3428,6 @@ function RhineDraftCalculator() {
                 baseShipsDict.set('bm600', bm600_ship);
             }
 
-
             const combos = [
                 createCombination('kvb_donau_1', t('comboNamePushedDanube1'), [['tr27_pusher', 1], ['danube_barge', 1]], baseShipsDict, { length: 103.5, width: 11, crew: CREW_KVB_STUFE3, category: 'dry_cargo' }), // Max 2 for TR27
                 createCombination('kvb_donau_2', t('comboNamePushedDanube2'), [['tr27_pusher', 1], ['danube_barge', 2]], baseShipsDict, { length: 180, width: 11, crew: CREW_KVB_STUFE4, category: 'dry_cargo' }), // Max 2 for TR27
@@ -3453,7 +3446,6 @@ function RhineDraftCalculator() {
 
             return [...baseShips.filter(s => s.category !== 'component'), ...combos];
         }, [customShips]);
-
 
         // --- Effects ---
         useEffect(() => {
@@ -3866,8 +3858,6 @@ function RhineDraftCalculator() {
             }
         }, [tonnageReferenceShipId, shipsForDropdown]);
 
-
-
         // --- Event Handlers ---
         const handleCorrectionChange = (direction, gaugeName, value) => {
             const parsedValue = parseInt(value, 10);
@@ -3924,7 +3914,6 @@ function RhineDraftCalculator() {
                 }
             }
         };
-
 
         useEffect(() => {
             const currentJourneySettings = journey[selectedRiver];
@@ -4091,7 +4080,6 @@ function RhineDraftCalculator() {
         const dryCargoShipsForDropdown = useMemo(() => shipsForDropdown.filter(s => s.category === 'dry_cargo'), [shipsForDropdown]);
         const tankerShipsForDropdown = useMemo(() => shipsForDropdown.filter(s => s.category === 'tanker'), [shipsForDropdown]);
 
-
         const todayStr = useMemo(() => {
             const todayDate = new Date();
             const nlYear = todayDate.toLocaleDateString('en-CA', {year: 'numeric', timeZone: 'Europe/Amsterdam'});
@@ -4122,7 +4110,6 @@ function RhineDraftCalculator() {
             }
             return bestTime;
         }
-
 
 const getGaugeBaseTime = (apiData) => {
     if (!apiData || !apiData.forecasts) return null;
@@ -4256,7 +4243,6 @@ const selectedTime = getBestForecastTime(forecastsForDate, gaugeBaseTime);
                 };
             });
         }, [activeTab, forecastDates, displayedGaugeDataMaxDraft, calculateDraft, showUncertainty, todayStr, getBestForecastTime, diffDays]);
-
 
         const calculateRoutePlan = useCallback(() => {
             setRoutePlanStatus('calculating');
@@ -4448,9 +4434,6 @@ const selectedTime = getBestForecastTime(forecastsForDate, gaugeBaseTime);
             }
         }, [calculateRoutePlan, activeTab]);
 
-
-
-
         const shipsForCargoTab = useMemo(() => {
             if (activeTab !== 'cargo') return [];
 
@@ -4514,7 +4497,6 @@ const selectedTime = getBestForecastTime(forecastsForDate, gaugeBaseTime);
         // --- Render ---
         const giwLabel = selectedRiver === 'Donau' ? 'RNW' : 'GIW';
         const tuGiwLabel = selectedRiver === 'Donau' ? 'TuRNW' : 'TuGIW';
-
 
         const handleSetCargoDraftFromCritical = () => {
              if (criticalDraftValue !== null && criticalDraftValue !== Infinity) {
@@ -5227,7 +5209,6 @@ const selectedTime = getBestForecastTime(forecastsForDate, gaugeBaseTime);
             </div>
         );
     }
-
 
     ReactDOM.render(
         <I18nProvider>
