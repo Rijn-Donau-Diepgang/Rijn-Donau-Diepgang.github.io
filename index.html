@@ -3512,12 +3512,14 @@ function RhineDraftCalculator() {
                 { name: 'Oberndorf', km: 2397, river: 'Donau', streckenAbschnitt: '2397-2380', giw: 170, depthAtGiw: 290, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
                 { name: 'Schwabelweis', km: 2377, river: 'Donau', streckenAbschnitt: '2380-2355', giw: 292, depthAtGiw: 290, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
                 { name: 'Pfatter', km: 2351, river: 'Donau', streckenAbschnitt: '2354-2330', giw: 310, depthAtGiw: 290, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
-                { name: 'Pfelling', km: 2306, river: 'Donau', streckenAbschnitt: '2322-2290', giw: 290, depthAtGiw: 200, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
+                { name: 'Pfelling (Straubing Hafen Sand)', apiDataName: 'Pfelling', km: 2312.3, river: 'Donau', streckenAbschnitt: '2322-2311.5', giw: 290, depthAtGiw: 265, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
+                { name: 'Pfelling', km: 2306, river: 'Donau', streckenAbschnitt: '2311.5-2290', giw: 290, depthAtGiw: 200, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
                 { name: 'Deggendorf', km: 2284, river: 'Donau', streckenAbschnitt: '2290-2282', giw: 210, depthAtGiw: 200, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
                 { name: 'Hofkirchen', km: 2257, river: 'Donau', streckenAbschnitt: '2282-2231', giw: 207, depthAtGiw: 200, officialSafetyMargin: 30, correctionOp: -8, correctionAf: -3, constraints: { convoyRule: { type: '4-barge-upstream', minLevel: 350, id: 'hofkirchen_4barge' } } },
                 { name: 'Passau Donau', km: 2227, river: 'Donau', streckenAbschnitt: '2231-2204', giw: 415, depthAtGiw: 270, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
                 // --- Rhine and other gauges ---
                 { name: 'Konstanz', km: 0, river: 'Rijn', streckenAbschnitt: '0-1', giw: 0, depthAtGiw: 0, officialSafetyMargin: 0, correctionOp: 0, correctionAf: 0 },
+                {name: 'Basel-Rheinhalle', km: 166, river: 'Rijn', streckenAbschnitt: '163-174', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -245 },
                 { name: 'Iffezheim', km: 334, river: 'Rijn', streckenAbschnitt: '334-384', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 10, correctionAf: 20, customVuistregel: 80 },
                 { name: 'Maxau', km: 362, river: 'Rijn', streckenAbschnitt: '335-384', giw: 372, depthAtGiw: 210, officialSafetyMargin: 30, correctionOp: 12, correctionAf: 12 },
                 { name: 'Speyer', km: 400, river: 'Rijn', streckenAbschnitt: '384-410.5', giw: 237, depthAtGiw: 210, officialSafetyMargin: 30, correctionOp: 27, correctionAf: 27 },
@@ -3533,10 +3535,10 @@ function RhineDraftCalculator() {
                 { name: 'Bonn', km: 655, river: 'Rijn', streckenAbschnitt: '624-660', giw: 142, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
                 { name: 'Köln', km: 688, river: 'Rijn', streckenAbschnitt: '660-710', giw: 139, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 9 },
                 { name: 'Düsseldorf', km: 744, river: 'Rijn', streckenAbschnitt: '710-763', giw: 91, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
-                { name: 'Duisburg-Ruhrort', km: 780, river: 'Rijn', streckenAbschnitt: '763-794', giw: 227, depthAtGiw: 280, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
+                { name: 'Duisburg-Ruhrort', km: 780, river: 'Rijn', streckenAbschnitt: '763-794', giw: 227, depthAtGiw: 280, officialSafetyMargin: 30, correctionOp: 7, correctionAf: 7 },
                 { name: 'Wesel', km: 814, river: 'Rijn', streckenAbschnitt: '794-837', giw: 174, depthAtGiw: 280, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
                 { name: 'Emmerich', km: 852, river: 'Rijn', streckenAbschnitt: '837-857', giw: 74, depthAtGiw: 280, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
-                { name: 'Lobith', km: 862, river: 'Rijn', streckenAbschnitt: '857-867.5', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -478, connections: [{ targetGaugeName: 'Pannerdense kop' }, { targetGaugeName: 'Nijmegen' }], constraints: { convoyRule: { type: '6-barge', minLevel: 750, id: 'lobith_6barge' } } },
+                { name: 'Lobith', km: 862, river: 'Rijn', streckenAbschnitt: '857-867.5', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -480, connections: [{ targetGaugeName: 'Pannerdense kop' }, { targetGaugeName: 'Nijmegen' }], constraints: { convoyRule: { type: '6-barge', minLevel: 750, id: 'lobith_6barge' } } },
                 { name: 'Nijmegen', km: 883, river: 'Waal', streckenAbschnitt: '867.5-893', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -260, connections: [{ targetGaugeName: 'Pannerdense kop' }, { targetGaugeName: 'Lobith' }] },
                 { name: 'Tiel', km: 914, river: 'Waal', streckenAbschnitt: '893-930', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: 10 },
                 { name: 'Pannerdense kop', km: 867, river: 'Pannerdens Kanaal', streckenAbschnitt: 'PK 867.5-878.6', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -485, connections: [{ targetGaugeName: 'Lobith' }, { targetGaugeName: 'Nijmegen' }, { targetGaugeName: 'IJsselkop' }] },
@@ -4352,7 +4354,7 @@ const selectedTime = getBestForecastTime(forecastsForDate, gaugeBaseTime);
                     }
                     currentTime = new Date(eta.getTime());
                     let forecastLevel = null, forecastTimeStr = 'N/A', forecastUncertainty = null, forecastSource = '', isCurrentLevelUsed = false;
-                    if (i === 0 && startDateTime <= now && currentApiData?.currentLevel !== null) {
+                    if (i === 0 && eta <= now && currentApiData?.currentLevel !== null) {
                         forecastLevel = currentApiData.currentLevel;
                         forecastTimeStr = currentApiData.currentTime || t('now');
                         forecastSource = 'current';
