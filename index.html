@@ -3506,6 +3506,43 @@ function RhineDraftCalculator() {
             const CANAL_AVG_SPEED = 7.1;
             const CANAL_DISTANCE = 555;
             const combinedStaticList = [
+                // --- NEW PORT DEFINITIONS START ---
+                // Ports with custom rules, defaults, or special Abladetiefe calculations
+                // They are included in routing if selected, but hidden from the 'All Data' view.
+                { name: 'Beinheim', km: 339, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Iffezheim', customVuistregel: 100, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Iffezheim' }, { targetGaugeName: 'Maxau' }] },
+                { name: 'Karlsruhe Stadthafen', km: 360, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Maxau', customVuistregel: -180, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Iffezheim' }, { targetGaugeName: 'Maxau' }] },
+                { name: 'Wörth', km: 366, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Maxau', giw: 372, depthAtGiw: 210, officialSafetyMargin: 30, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Maxau' }, { targetGaugeName: 'Speyer' }] },
+                { name: 'Karlsruhe Ölhafen', km: 361, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Maxau', giw: 372, depthAtGiw: 210, officialSafetyMargin: 30, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Maxau' }, { targetGaugeName: 'Speyer' }] },
+                { name: 'Germersheim', km: 385, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Speyer', giw: 237, depthAtGiw: 210, officialSafetyMargin: 30, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Maxau' }, { targetGaugeName: 'Speyer' }] },
+                { name: 'Rheinhausen', km: 394, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Speyer', giw: 237, depthAtGiw: 210, officialSafetyMargin: 30, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Speyer' }, { targetGaugeName: 'Mannheim' }] },
+                { name: 'Ölhafen Speyer', km: 399, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Speyer', customVuistregel: -40, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Speyer' }, { targetGaugeName: 'Mannheim' }] },
+                { name: 'Rheinau', km: 415, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Mannheim', giw: 155, depthAtGiw: 210, officialSafetyMargin: 30, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Speyer' }, { targetGaugeName: 'Mannheim' }] },
+                { name: 'Kaiserwörthhaven', km: 421, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Mannheim', giw: 155, depthAtGiw: 210, officialSafetyMargin: 30, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Mannheim' }, { targetGaugeName: 'Worms' }] },
+                { name: 'Ludwigshafen', km: 432, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Mannheim', customVuistregel: 70, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Mannheim' }, { targetGaugeName: 'Worms' }] },
+                { name: 'Lampertheimer Altrhein', km: 437, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Worms', giw: 68, depthAtGiw: 170, officialSafetyMargin: 30, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Mannheim' }, { targetGaugeName: 'Worms' }] },
+                { name: 'Gernsheim', km: 462, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Worms', customVuistregel: 90, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Worms' }, { targetGaugeName: 'Mainz' }] },
+                { name: 'Gustavsburg', km: 496, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Mainz', customVuistregel: 9, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Worms' }, { targetGaugeName: 'Mainz' }] },
+                { name: 'Einfahrt Main bis Kostheim', km: 497, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Mainz', giw: 171, depthAtGiw: 210, officialSafetyMargin: 30, isPort: true, correctionOp: 26, correctionAf: 26, connections: [{ targetGaugeName: 'Mainz' }, { targetGaugeName: 'Oestrich' }] },
+                { name: 'Mainz Mombach/Industriehafen', km: 504, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Mainz', giw: 171, depthAtGiw: 210, officialSafetyMargin: 30, isPort: true, correctionOp: 21, correctionAf: 21, connections: [{ targetGaugeName: 'Mainz' }, { targetGaugeName: 'Oestrich' }] },
+                { name: 'Wiesbaden', km: 502, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Mainz', giw: 171, depthAtGiw: 210, officialSafetyMargin: 30, isPort: true, correctionOp: 21, correctionAf: 21, connections: [{ targetGaugeName: 'Mainz' }, { targetGaugeName: 'Oestrich' }] },
+                { name: 'Hafen Bingen', km: 527, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Bingen', customVuistregel: 100, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Oestrich' }, { targetGaugeName: 'Bingen' }] },
+                { name: 'Loreleyhafen', km: 555, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Kaub', giw: 77, depthAtGiw: 190, officialSafetyMargin: 30, isPort: true, correctionOp: 17, correctionAf: 17, connections: [{ targetGaugeName: 'Kaub' }, { targetGaugeName: 'Koblenz' }] },
+                { name: 'Bendorf', km: 599, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Andernach', giw: 91, depthAtGiw: 250, officialSafetyMargin: 30, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Koblenz (Mosel)' }, { targetGaugeName: 'Andernach' }] },
+                { name: 'Hafen Brohl', km: 621, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Andernach', giw: 91, depthAtGiw: 250, officialSafetyMargin: 30, isPort: true, correctionOp: -29, correctionAf: -29, connections: [{ targetGaugeName: 'Andernach' }, { targetGaugeName: 'Bonn' }] },
+                { name: 'Wesseling', km: 668, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Köln', isPort: true, giw: 139, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: -51, correctionAf: -51, connections: [{ targetGaugeName: 'Bonn' }, { targetGaugeName: 'Köln' }] },
+                { name: 'Godorf', km: 672, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Köln', isPort: true, giw: 139, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: -21, correctionAf: -21, connections: [{ targetGaugeName: 'Bonn' }, { targetGaugeName: 'Köln' }] },
+                { name: 'Köln Niehl 1', km: 696, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Köln', isPort: true, giw: 139, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: -31, correctionAf: -31, connections: [{ targetGaugeName: 'Köln' }, { targetGaugeName: 'Düsseldorf' }] },
+                { name: 'Dormagen', km: 712, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Köln', isPort: true, giw: 139, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Köln' }, { targetGaugeName: 'Düsseldorf' }] },
+                { name: 'Stürzelberg', km: 725, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Düsseldorf', isPort: true, giw: 91, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: -4, correctionAf: -4 , connections: [{ targetGaugeName: 'Köln' }, { targetGaugeName: 'Düsseldorf' }] },
+                { name: 'Düsseldorf Neuss', km: 740, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Düsseldorf', isPort: true, giw: 91, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: -4, correctionAf: -4 , connections: [{ targetGaugeName: 'Düsseldorf' }, { targetGaugeName: 'Duisburg-Ruhrort' }] },
+                { name: 'Hafen Düsseldorf', km: 743, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Düsseldorf', isPort: true, giw: 91, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: 1, correctionAf: 1 , connections: [{ targetGaugeName: 'Düsseldorf' }, { targetGaugeName: 'Duisburg-Ruhrort' }] },
+                { name: 'Krefeld', km: 764, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Duisburg-Ruhrort', isPort: true, giw: 227, depthAtGiw: 280, officialSafetyMargin: 30, correctionOp: -43, correctionAf: -43, connections: [{ targetGaugeName: 'Düsseldorf' }, { targetGaugeName: 'Duisburg-Ruhrort' }] },
+                { name: 'Uerdingen', km: 765, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Duisburg-Ruhrort', isPort: true, giw: 227, depthAtGiw: 280, officialSafetyMargin: 30, correctionOp: -53, correctionAf: -53, connections: [{ targetGaugeName: 'Düsseldorf' }, { targetGaugeName: 'Duisburg-Ruhrort' }] },
+                { name: 'Ruhr, Mündung bis Ruhrschleuse', km: 780.1, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Duisburg-Ruhrort', refGaugeGiw: 227, depthAtGiw: 235, officialSafetyMargin: 0, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Duisburg-Ruhrort' }, { targetGaugeName: 'Wesel' }] },
+                { name: 'Rhein-Herne-Kanal/Hafenkanal', km: 780.3, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Duisburg-Ruhrort', refGaugeGiw: 227, depthAtGiw: 265, officialSafetyMargin: 0, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Duisburg-Ruhrort' }, { targetGaugeName: 'Wesel' }] },
+                { name: 'Wesel-Datteln-Kanal, Mündung bis Schleuse', km: 813, river: 'Rijn', streckenAbschnitt: 'Port', apiDataName: 'Wesel', refGaugeGiw: 174, depthAtGiw: 235, officialSafetyMargin: 0, isPort: true, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Duisburg-Ruhrort' }, { targetGaugeName: 'Wesel' }] },
+                // --- NEW PORT DEFINITIONS END ---
+
                 // --- Donau (Danube) Gauges ---
                 { name: 'Ingolstadt', apiDataName: 'Ingolstadt Luitpoldstrasse', km: 2458, river: 'Donau', streckenAbschnitt: '2458-XXXX', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0 },
                 { name: 'Kelheim', apiDataName: 'Kelheim Donau', km: 2410, river: 'Donau', streckenAbschnitt: '2415-2399', giw: 250, depthAtGiw: 290, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Mainz', distance: CANAL_DISTANCE, speed: CANAL_AVG_SPEED, isCanal: true }] },
@@ -3529,8 +3566,8 @@ function RhineDraftCalculator() {
                 { name: 'Oestrich', km: 518, river: 'Rijn', streckenAbschnitt: '508-528', giw: 92, depthAtGiw: 190, officialSafetyMargin: 30, correctionOp: 42, correctionAf: 42 },
                 { name: 'Bingen', km: 528, river: 'Rijn', streckenAbschnitt: '528-540', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: 100 },
                 { name: 'Kaub', km: 546, river: 'Rijn', streckenAbschnitt: '541-566', giw: 77, depthAtGiw: 190, officialSafetyMargin: 30, correctionOp: 17, correctionAf: 17, constraints: { maxWidth: 22.9, id: 'kaub_width'} },
-                { name: 'Koblenz', km: 591, river: 'Rijn', streckenAbschnitt: '566-592', giw: 77, depthAtGiw: 210, officialSafetyMargin: 30, correctionOp: 27, correctionAf: 27 },
-                { name: 'Koblenz (Mosel)', apiDataName: 'Koblenz', km: 592, river: 'Rijn', streckenAbschnitt: '592-601', giw: 77, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
+                { name: 'Koblenz', km: 591, river: 'Rijn', streckenAbschnitt: '566-592', giw: 77, depthAtGiw: 210, officialSafetyMargin: 30, correctionOp: 27, correctionAf: 27, connections: [{ targetGaugeName: 'Koblenz (Mosel)' }] },
+                { name: 'Koblenz (Mosel)', apiDataName: 'Koblenz', km: 592, river: 'Rijn', streckenAbschnitt: '592-601', giw: 77, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0, connections: [{ targetGaugeName: 'Koblenz' }] },
                 { name: 'Andernach', km: 613, river: 'Rijn', streckenAbschnitt: '601-624', giw: 91, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
                 { name: 'Bonn', km: 655, river: 'Rijn', streckenAbschnitt: '624-660', giw: 142, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
                 { name: 'Köln', km: 688, river: 'Rijn', streckenAbschnitt: '660-710', giw: 139, depthAtGiw: 250, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 9 },
@@ -3538,7 +3575,7 @@ function RhineDraftCalculator() {
                 { name: 'Duisburg-Ruhrort', km: 780, river: 'Rijn', streckenAbschnitt: '763-794', giw: 227, depthAtGiw: 280, officialSafetyMargin: 30, correctionOp: 7, correctionAf: 7 },
                 { name: 'Wesel', km: 814, river: 'Rijn', streckenAbschnitt: '794-837', giw: 174, depthAtGiw: 280, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
                 { name: 'Emmerich', km: 852, river: 'Rijn', streckenAbschnitt: '837-857', giw: 74, depthAtGiw: 280, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
-                { name: 'Lobith', km: 862, river: 'Rijn', streckenAbschnitt: '857-867.5', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -480, connections: [{ targetGaugeName: 'Pannerdense kop' }, { targetGaugeName: 'Nijmegen' }], constraints: { convoyRule: { type: '6-barge', minLevel: 750, id: 'lobith_6barge' } } },
+                { name: 'Lobith', km: 862, river: 'Rijn', streckenAbschnitt: '857-867.5', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -480, constraints: { convoyRule: { type: '6-barge', minLevel: 750, id: 'lobith_6barge' } } },
                 { name: 'Nijmegen', km: 883, river: 'Waal', streckenAbschnitt: '867.5-893', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -260, connections: [{ targetGaugeName: 'Pannerdense kop' }, { targetGaugeName: 'Lobith' }] },
                 { name: 'Tiel', km: 914, river: 'Waal', streckenAbschnitt: '893-930', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: 10 },
                 { name: 'Pannerdense kop', km: 867, river: 'Pannerdens Kanaal', streckenAbschnitt: 'PK 867.5-878.6', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -485, connections: [{ targetGaugeName: 'Lobith' }, { targetGaugeName: 'Nijmegen' }, { targetGaugeName: 'IJsselkop' }] },
@@ -3973,7 +4010,16 @@ function RhineDraftCalculator() {
         }, [journey, selectedRiver, allGaugeStaticData]);
 
         const journeyGaugeData = useMemo(() => {
-            const routeWithApiData = gaugesOnRoute
+
+            const startGaugeName = journey[selectedRiver]?.start;
+            const endGaugeName = journey[selectedRiver]?.end;
+
+            // Filter out intermediate ports unless a port is explicitly selected as start/end
+            const filteredRoute = gaugesOnRoute.filter(gauge => {
+                return !gauge.isPort || gauge.name === startGaugeName || gauge.name === endGaugeName;
+            });
+
+            const routeWithApiData = filteredRoute
                 .map(routeGauge => {
                     const apiData = gaugeApiData[routeGauge.name];
                     if (apiData && (apiData.status === 'OK' || apiData.status?.startsWith('CACHED') || apiData.status === 'WARNING')) {
@@ -4011,6 +4057,7 @@ function RhineDraftCalculator() {
             }
             if (activeTab === 'all') {
                 return allGaugeStaticData.filter(staticGauge => {
+                    if (staticGauge.isPort) return false;
                     const apiData = gaugeApiData[staticGauge.name];
                     const hasApiData = !!apiData && (apiData.status === 'OK' || apiData.status?.startsWith('CACHED') || apiData.status === 'WARNING');
                     if (!hasApiData) return false;
@@ -4032,7 +4079,18 @@ function RhineDraftCalculator() {
             const numericLevel = Number(waterLevel);
             const effectiveDirection = direction || travelDirection;
             const correction = customCorrections[effectiveDirection]?.[gauge.name] || 0;
-            if (gauge.river === 'MGD') {
+
+            // NEW LOGIC FOR PORTS WITH SPECIAL CALCULATION (Abladetiefe)
+            if (gauge.refGaugeGiw !== undefined) {
+                const giw = Number(gauge.refGaugeGiw);
+                const depth = Number(gauge.depthAtGiw);
+                const safety = Number(gauge.officialSafetyMargin);
+                if (!isNaN(giw) && !isNaN(depth) && !isNaN(safety)) {
+                    calculatedDraft = (numericLevel - giw + depth - safety + correction);
+                }
+            }
+            // END NEW LOGIC
+            else if (gauge.river === 'MGD') {
                 const safetyMargin = gauge.officialSafetyMargin !== 'N/A' ? Number(gauge.officialSafetyMargin) : DEFAULT_DEPTH_SAFETY_MARGIN;
                 if (!isNaN(safetyMargin)) { calculatedDraft = (numericLevel - safetyMargin + correction); }
             } else if (gauge.customVuistregel !== undefined && gauge.customVuistregel !== null && !isNaN(Number(gauge.customVuistregel))) {
@@ -4048,8 +4106,9 @@ function RhineDraftCalculator() {
         }, [customCorrections, travelDirection]);
 
         const calculateOfficialRuleOfThumb = useCallback((gauge) => {
-            if (gauge.river === 'MGD' || gauge.giw === 'N/A' || gauge.depthAtGiw === 'N/A' || gauge.officialSafetyMargin === 'N/A') return "N/A";
-            const giw = Number(gauge.giw);
+            const giwValue = (gauge.giw !== undefined && gauge.giw !== 'N/A') ? gauge.giw : gauge.refGaugeGiw;
+            if (gauge.river === 'MGD' || giwValue === undefined || gauge.depthAtGiw === 'N/A' || gauge.officialSafetyMargin === 'N/A') return "N/A";
+            const giw = Number(giwValue);
             const depth = Number(gauge.depthAtGiw);
             const safety = Number(gauge.officialSafetyMargin);
             if (isNaN(giw) || isNaN(depth) || isNaN(safety)) return "N/A";
@@ -4424,7 +4483,10 @@ const selectedTime = getBestForecastTime(forecastsForDate, gaugeBaseTime);
                     finalOverallMinDraft = 250;
                     limitReason = { message: t('canalLimitReason') };
                 }
-                const finalRoutePoints = intermediatePoints.map(point => {
+
+                const finalRoutePoints = intermediatePoints
+                    .filter(point => !point.gaugeRef.isPort || point.name === startGaugeName || point.name === endGaugeName)
+                    .map(point => {
                     let finalOffset = '-';
                     if (point.forecastLevel !== null && !isNaN(Number(point.forecastLevel)) && finalOverallMinDraft !== Infinity) {
                         const offsetCalc = -point.forecastLevel + finalOverallMinDraft;
