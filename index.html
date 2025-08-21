@@ -1259,6 +1259,18 @@
 
 <script type="text/babel">
     const {useState, useEffect, useCallback, useRef, useMemo, createContext, useContext} = React;
+    function getAnonymousUserId() {
+        let userId = localStorage.getItem('anonymousUserId');
+        if (!userId) {
+            // Simple UUID generator using the browser's crypto API
+            userId = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+                (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+            );
+            localStorage.setItem('anonymousUserId', userId);
+        }
+        return userId;
+    }
+
 
 
 const translations = {
@@ -3296,6 +3308,40 @@ const CREW_KVB_STUFE5 = { // Schubboot + 3+ Schubleichter / Motorschiff + 2+ Sch
 // --- React Component ---
 function RhineDraftCalculator() {
         const { t, locale, weekdays, language, setLanguage } = useContext(I18nContext);
+        const logCorrection = useCallback((gaugeName, direction, value, waterLevel) => {
+            // If waterLevel is not a valid number, we can't log the context.
+            if (waterLevel === null || waterLevel === undefined || isNaN(Number(waterLevel))) {
+                return; // Don't log if there's no water level context
+            }
+
+            const LOGGING_ENDPOINT = 'https://rdd-backend.vercel.app/api/log-correction';
+
+            const payload = {
+                userId: getAnonymousUserId(),
+                gaugeName: gaugeName,
+                direction: direction,
+                value: value,
+                waterLevel: waterLevel, // <-- ADDED
+                timestamp: new Date().toISOString(),
+            };
+
+            // navigator.sendBeacon is a robust way to send analytics that works even if the user closes the page.
+            if (navigator.sendBeacon) {
+                const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+                navigator.sendBeacon(LOGGING_ENDPOINT, blob);
+            } else {
+                // Fallback for older browsers
+                fetch(LOGGING_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    keepalive: true,
+                }).catch(error => console.error(`Fallback logging error for ${gaugeName}:`, error));
+            }
+        }, []);
+
+        const debounceTimers = useRef({});
+
 
         const RAW_SHIP_DATA = useMemo(() => (
 [
@@ -3575,10 +3621,10 @@ function RhineDraftCalculator() {
                 { name: 'Duisburg-Ruhrort', km: 780, river: 'Rijn', streckenAbschnitt: '763-794', giw: 227, depthAtGiw: 280, officialSafetyMargin: 30, correctionOp: 7, correctionAf: 7 },
                 { name: 'Wesel', km: 814, river: 'Rijn', streckenAbschnitt: '794-837', giw: 174, depthAtGiw: 280, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
                 { name: 'Emmerich', km: 852, river: 'Rijn', streckenAbschnitt: '837-857', giw: 74, depthAtGiw: 280, officialSafetyMargin: 30, correctionOp: 0, correctionAf: 0 },
-                { name: 'Lobith', km: 862, river: 'Rijn', streckenAbschnitt: '857-867.5', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -480, constraints: { convoyRule: { type: '6-barge', minLevel: 750, id: 'lobith_6barge' } } },
+                { name: 'Lobith', km: 862, river: 'Rijn', streckenAbschnitt: '857-867.5', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -480, connections: [{ targetGaugeName: 'Pannerdense kop' }], constraints: { convoyRule: { type: '6-barge', minLevel: 750, id: 'lobith_6barge' } } },
                 { name: 'Nijmegen', km: 883, river: 'Waal', streckenAbschnitt: '867.5-893', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -260, connections: [{ targetGaugeName: 'Pannerdense kop' }, { targetGaugeName: 'Lobith' }] },
                 { name: 'Tiel', km: 914, river: 'Waal', streckenAbschnitt: '893-930', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: 10 },
-                { name: 'Pannerdense kop', km: 867, river: 'Pannerdens Kanaal', streckenAbschnitt: 'PK 867.5-878.6', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -485, connections: [{ targetGaugeName: 'Lobith' }, { targetGaugeName: 'Nijmegen' }, { targetGaugeName: 'IJsselkop' }] },
+                { name: 'Pannerdense kop', km: 867, river: 'Pannerdens Kanaal', streckenAbschnitt: 'PK 867.5-878.6', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 0, customVuistregel: -440, connections: [{ targetGaugeName: 'Lobith' }, { targetGaugeName: 'Nijmegen' }, { targetGaugeName: 'IJsselkop' }] },
                 { name: 'IJsselkop', km: 878, river: 'IJssel', streckenAbschnitt: 'IJ 867-903', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 10, correctionAf: 20, customVuistregel: -480, connections: [{ targetGaugeName: 'Pannerdense kop' }] },
                 { name: 'Doesburg', km: 903, river: 'IJssel', streckenAbschnitt: 'IJ 903-931', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 10, correctionAf: 20, customVuistregel: -200 },
                 { name: 'Deventer', km: 931, river: 'IJssel', streckenAbschnitt: 'IJ 931-981', giw: 'N/A', depthAtGiw: 'N/A', officialSafetyMargin: 'N/A', correctionOp: 0, correctionAf: 10, customVuistregel: 90 },
@@ -3942,11 +3988,27 @@ function RhineDraftCalculator() {
         }, [tonnageReferenceShipId, shipsForDropdown]);
 
         // --- Event Handlers ---
-        const handleCorrectionChange = (direction, gaugeName, value) => {
+
+        const handleCorrectionChange = (direction, gaugeName, value, currentLevel) => {
             const parsedValue = parseInt(value, 10);
             const newValue = value === '' ? 0 : (isNaN(parsedValue) ? (customCorrections[direction][gaugeName] || 0) : parsedValue);
-            setCustomCorrections({ ...customCorrections, [direction]: {...customCorrections[direction], [gaugeName]: newValue} });
+
+            // Update state immediately for a responsive UI
+            setCustomCorrections(prev => ({ ...prev, [direction]: {...prev[direction], [gaugeName]: newValue} }));
+
+            // Clear any existing timer for this specific input to reset the debounce
+            if (debounceTimers.current[`${gaugeName}-${direction}`]) {
+                clearTimeout(debounceTimers.current[`${gaugeName}-${direction}`]);
+            }
+
+            // Set a new timer to log the change after 2 seconds
+            debounceTimers.current[`${gaugeName}-${direction}`] = setTimeout(() => {
+                console.log(`Logging change for ${gaugeName} (${direction}): val=${newValue}, wl=${currentLevel}`); // For testing
+                // Pass the currentLevel to the logging function
+                logCorrection(gaugeName, direction, newValue, currentLevel);
+            }, 2000); // 2-second delay
         };
+
 
         const handleJourneyChange = (type, value) => {
             const newJourneyForRiver = { ...(journey[selectedRiver] || {}), [type]: value || null };
@@ -4856,8 +4918,8 @@ const selectedTime = getBestForecastTime(forecastsForDate, gaugeBaseTime);
                                                 <td className={levelColumnClass}> {currentLevelDisplay !== null ? currentLevelDisplay.toFixed(0) : (apiData?.status === 'ERROR' ? `Error` : '-')} <div className="time-display">{currentTime !== 'N/A' ? currentTime : (apiData?.status ? '' : t('loading'))}</div> </td>
                                                 <td className="numeric">{currentTrend}</td>
                                                 <td className="numeric">{officialRuleDisplay}</td>
-                                                <td className="numeric"><input type="number" value={customCorrections.upstream[gauge.name] ?? ''} onChange={(e) => handleCorrectionChange('upstream', gauge.name, e.target.value)}/></td>
-                                                <td className="numeric"><input type="number" value={customCorrections.downstream[gauge.name] ?? ''} onChange={(e) => handleCorrectionChange('downstream', gauge.name, e.target.value)}/></td>
+                                                <td className="numeric"><input type="number" value={customCorrections.upstream[gauge.name] ?? ''} onChange={(e) => handleCorrectionChange('upstream', gauge.name, e.target.value, apiData?.currentLevel)}/></td>
+                                                <td className="numeric"><input type="number" value={customCorrections.downstream[gauge.name] ?? ''} onChange={(e) => handleCorrectionChange('downstream', gauge.name, e.target.value, apiData?.currentLevel)}/></td>
                                                 <td className="numeric">{customRuleDisplayUp}</td>
                                                 <td className="numeric">{customRuleDisplayDown}</td>
                                                 <td className={lastColumnClass}> {lastColumnValue} {lastColumnValue !== '-' && <div className="time-display">{currentTime !== 'N/A' ? currentTime : ''}</div>} </td>
