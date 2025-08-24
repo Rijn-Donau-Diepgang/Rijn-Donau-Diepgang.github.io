@@ -1366,7 +1366,9 @@ const translations = {
         "maxPossibleDraft": "Maximaal Mogelijke Diepgang",
         "limitedBy": "Beperkt door",
         "mgdWarningText": "WAARSCHUWING: De berekende diepgang van {calculatedDraft} cm overschrijdt de MGD voor {mgdName} ({mgdDraft} cm). Varen met deze diepgang is op eigen risico.",
-        "canalLimitReason": "(boven) Main (max 250 cm)",
+        "canalLimitReasonMain": "(boven) Main (max 250 cm)",
+        "canalLimitReasonDanube": "Donau-traject Kelheim-Passau (max 280 cm)",
+        "canalLimitReasonBasel": "Rijn-traject Iffezheim-Bazel (max 300 cm)",
         "routeDetails": "Routedetails",
         "plannerHeaderKm": "KM",
         "plannerHeaderName": "Naam",
@@ -1582,7 +1584,9 @@ const translations = {
         "maxPossibleDraft": "Maximum Possible Draft",
         "limitedBy": "Limited by",
         "mgdWarningText": "WARNING: The calculated draft of {calculatedDraft} cm exceeds the MGD for {mgdName} ({mgdDraft} cm). Sailing at this draft is at your own risk.",
-        "canalLimitReason": "(upper) Main (max 250 cm)",
+        "canalLimitReasonMain": "(upper) Main (max 250 cm)",
+        "canalLimitReasonDanube": "Danube section Kelheim-Passau (max 280 cm)",
+        "canalLimitReasonBasel": "Rhine section Iffezheim-Basel (max 300 cm)",
         "routeDetails": "Route Details",
         "plannerHeaderKm": "KM",
         "plannerHeaderName": "Name",
@@ -1798,7 +1802,9 @@ const translations = {
         "maxPossibleDraft": "Maximal möglicher Tiefgang",
         "limitedBy": "Begrenzt durch",
         "mgdWarningText": "WARNUNG: Der berechnete Tiefgang von {calculatedDraft} cm überschreitet den MGD für {mgdName} ({mgdDraft} cm). Die Fahrt mit diesem Tiefgang erfolgt auf eigenes Risiko.",
-        "canalLimitReason": "(oberer) Main (max 250 cm)",
+        "canalLimitReasonMain": "(oberer) Main (max 250 cm)",
+        "canalLimitReasonDanube": "Donauabschnitt Kelheim-Passau (max 280 cm)",
+        "canalLimitReasonBasel": "Rheinabschnitt Iffezheim-Basel (max 300 cm)",
         "routeDetails": "Routendetails",
         "plannerHeaderKm": "KM",
         "plannerHeaderName": "Name",
@@ -2014,7 +2020,9 @@ const translations = {
         "maxPossibleDraft": "Tirant d'eau Maximum Possible",
         "limitedBy": "Limité par",
         "mgdWarningText": "AVERTISSEMENT: Le tirant d'eau calculé de {calculatedDraft} cm dépasse le MGD pour {mgdName} ({mgdDraft} cm). Naviguer à ce tirant d'eau est à vos propres risques.",
-        "canalLimitReason": "Main (supérieur) (max 250 cm)",
+        "canalLimitReasonMain": "Main (supérieur) (max 250 cm)",
+        "canalLimitReasonDanube": "Section Danube Kelheim-Passau (max 280 cm)",
+        "canalLimitReasonBasel": "Section Rhin Iffezheim-Bâle (max 300 cm)",
         "routeDetails": "Détails de l'itinéraire",
         "plannerHeaderKm": "KM",
         "plannerHeaderName": "Nom",
@@ -2230,7 +2238,9 @@ const translations = {
         "maxPossibleDraft": "Максимально Возможная Осадка",
         "limitedBy": "Ограничено",
         "mgdWarningText": "ВНИМАНИЕ: Расчетная осадка {calculatedDraft} см превышает MGD для {mgdName} ({mgdDraft} см). Движение с такой осадкой на ваш страх и риск.",
-        "canalLimitReason": "(верхний) Майн (макс 250 см)",
+        "canalLimitReasonMain": "(верхний) Майн (макс 250 см)",
+        "canalLimitReasonDanube": "Участок Дуная Кельхайм-Пассау (макс 280 см)",
+        "canalLimitReasonBasel": "Участок Рейна Иффецхайм-Базель (макс 300 см)",
         "routeDetails": "Детали маршрута",
         "plannerHeaderKm": "КМ",
         "plannerHeaderName": "Название",
@@ -4164,7 +4174,7 @@ function RhineDraftCalculator() {
                 const safety = Number(gauge.officialSafetyMargin);
                 if (!isNaN(giw) && !isNaN(depth) && !isNaN(safety)) { calculatedDraft = (numericLevel - giw + depth - safety + correction); }
             }
-            if (calculatedDraft !== null) { if (gauge.river === 'Donau') { return Math.min(calculatedDraft, 270); } }
+            if (calculatedDraft !== null) { if (gauge.river === 'Donau') { return Math.min(calculatedDraft, 280); } }
             return calculatedDraft;
         }, [customCorrections, travelDirection]);
 
@@ -4454,6 +4464,14 @@ const selectedTime = getBestForecastTime(forecastsForDate, gaugeBaseTime);
                 }
                 for (let i = 0; i < routeGauges.length; i++) {
                     const currentGauge = routeGauges[i];
+                    // --- BUGFIX: Skip intermediate ports from bottleneck calculation ---
+                    if (currentGauge.isPort && currentGauge.name !== startGaugeName && currentGauge.name !== endGaugeName) {
+                        continue;
+                    }
+                    // --- BUGFIX: Skip intermediate ports from bottleneck calculation ---
+                    if (currentGauge.isPort && currentGauge.name !== startGaugeName && currentGauge.name !== endGaugeName) {
+                        continue;
+                    }
                     const currentApiData = gaugeApiData[currentGauge.name];
                     let eta = new Date(currentTime.getTime());
                     let planDirection = 'downstream';
@@ -4536,16 +4554,24 @@ const selectedTime = getBestForecastTime(forecastsForDate, gaugeBaseTime);
                 }
                 let finalOverallMinDraft = overallMinDraft;
                 let limitReason = null;
-                const routeContainsCanal = routeGauges.some((gauge, index) => {
-                    if (index > 0) {
-                        const prevGauge = routeGauges[index - 1];
-                        return (prevGauge.name === 'Mainz' && gauge.name === 'Kelheim') || (prevGauge.name === 'Kelheim' && gauge.name === 'Mainz');
-                    } return false;
-                });
+
+                // --- BUGFIX: Apply hard draft limits for specific sections ---
+                const gaugeNamesOnRoute = routeGauges.map(g => g.name);
+                const routeContainsCanal = (gaugeNamesOnRoute.includes('Mainz') && gaugeNamesOnRoute.includes('Kelheim'));
+                const isOnDanubeSection = routeGauges.some(g => g.river === 'Donau');
+                const isOnBaselSection = gaugeNamesOnRoute.includes('Basel-Rheinhalle') && gaugeNamesOnRoute.includes('Iffezheim');
+
                 if (routeContainsCanal && finalOverallMinDraft > 250) {
                     finalOverallMinDraft = 250;
-                    limitReason = { message: t('canalLimitReason') };
+                    limitReason = { message: t('canalLimitReasonMain') };
+                } else if (isOnDanubeSection && finalOverallMinDraft > 280) {
+                    finalOverallMinDraft = 280;
+                    limitReason = { message: t('canalLimitReasonDanube') };
+                } else if (isOnBaselSection && finalOverallMinDraft > 300) {
+                    finalOverallMinDraft = 300;
+                    limitReason = { message: t('canalLimitReasonBasel') };
                 }
+                // --- BUGFIX END ---
 
                 const finalRoutePoints = intermediatePoints
                     .filter(point => !point.gaugeRef.isPort || point.name === startGaugeName || point.name === endGaugeName)
