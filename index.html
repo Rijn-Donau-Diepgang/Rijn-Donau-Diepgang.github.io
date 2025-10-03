@@ -5,23 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moving to pegeltiefgang.com</title>
 
-    <!-- SEO: Tell search engines the content has permanently moved. This is very important! -->
     <link rel="canonical" href="https://www.pegeltiefgang.com/">
 
-    <!-- Tell search engines not to index this redirect page itself. -->
+
     <meta name="robots" content="noindex">
 
-    <!-- The JavaScript Redirect: This runs immediately. -->
     <script>
         (function() {
-            // The new domain you are redirecting to.
             var newHost = "www.pegeltiefgang.com";
 
-            // Construct the new URL by combining the new host with the old path and search parameters.
-            // This preserves things like /?tab=planner&start=Tiel
             var newUrl = "https://" + newHost;
 
-            // Use replace() so the user can't click the "back" button to the old redirect page.
             window.location.replace(newUrl);
         })();
     </script>
@@ -33,8 +27,6 @@
     <p>You are being redirected to our new address:</p>
     <p>U wordt doorgestuurd naar ons nieuwe adres:</p>
     <p>Sie werden zu unserer neuen Adresse weitergeleitet:</p>
-
-    <!-- Fallback link in case JavaScript is disabled -->
     <p>
         <a id="redirect-link" href="https://www.pegeltiefgang.com" style="font-size: 1.2em; color: #87c3ff;">
             pegeltiefgang.com
@@ -45,7 +37,6 @@
         If you are not redirected automatically, please click the link above.
     </p>
 
-    <!-- A small script to update the fallback link to also include the parameters -->
     <script>
         document.getElementById('redirect-link').href = "https://www.pegeltiefgang.com" ;
     </script>
